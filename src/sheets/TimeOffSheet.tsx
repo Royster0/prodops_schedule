@@ -119,11 +119,9 @@ export function TimeOffSheet(props: TimeOffSheetProps) {
 
   const remove = () => {
     if (!existing) return;
-    scheduleStore
-      .getState()
-      .commit('remove time off', (changes) => changes.remove('timeOff', existing.id), {
-        toast: 'Removed the time off.',
-      });
+    scheduleStore.getState().commit('remove time off', (changes) => changes.remove('timeOff', existing.id), {
+      toast: 'Removed the time off.',
+    });
     props.onClose();
   };
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SheetFrame } from '../components/Sheet';
 import type { SheetState } from '../store/types';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
+import { ApplySheet } from './ApplySheet';
 import { ShiftSheet } from './ShiftSheet';
 import { TimeOffSheet } from './TimeOffSheet';
 
@@ -30,6 +31,8 @@ function SheetContent({ sheet, onClose }: { sheet: SheetState; onClose(): void }
       return <ShiftSheet {...sheet} onClose={onClose} />;
     case 'timeOff':
       return <TimeOffSheet {...sheet} onClose={onClose} />;
+    case 'apply':
+      return <ApplySheet preset={sheet.preset} onClose={onClose} />;
     default:
       return null;
   }

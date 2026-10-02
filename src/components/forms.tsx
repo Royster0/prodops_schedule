@@ -102,6 +102,30 @@ export function ChoiceChips<T extends string>({ label, choices, value, onChange 
   );
 }
 
+/** Chips that each run an action, e.g. quick date ranges. */
+export function ActionChips({
+  label,
+  actions,
+}: {
+  label: string;
+  actions: readonly { label: string; onClick(): void }[];
+}) {
+  return (
+    <div role="group" aria-label={label} className={styles.chips}>
+      {actions.map((action) => (
+        <button
+          key={action.label}
+          type="button"
+          className={[styles.chip, styles.actionChip].join(' ')}
+          onClick={action.onClick}
+        >
+          {action.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface ToggleChipsProps {
   label: string;
   options: readonly { id: ID; label: string; color?: string }[];

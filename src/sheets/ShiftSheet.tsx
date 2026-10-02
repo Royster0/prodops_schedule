@@ -175,11 +175,9 @@ export function ShiftSheet(props: ShiftSheetProps) {
 
   const remove = () => {
     if (!existing) return;
-    scheduleStore
-      .getState()
-      .commit('delete shift', (changes) => changes.remove('shifts', existing.id), {
-        toast: 'Deleted the shift.',
-      });
+    scheduleStore.getState().commit('delete shift', (changes) => changes.remove('shifts', existing.id), {
+      toast: 'Deleted the shift.',
+    });
     props.onClose();
   };
 

@@ -89,3 +89,27 @@ describe('paint strokes', () => {
     expect(store.getState().tool).toEqual({ kind: 'select' });
   });
 });
+
+describe('apply shifts through the store', () => {
+  it('is one undo entry with an "Applied" toast, and undo says what it undid', async () => {
+    const { applyShifts, appliedMessage, WEEKDAYS_MON_TO_FRI } = await import('../domain/apply');
+    const { store } = await setup();
+    const request = {
+      what: { kind: 'template' as const, templateId: 'L10' },
+      employeeIds: ['ana', 'ben'],
+      from: '2026-10-05',
+      to: '2026-10-18',
+      weekdays: WEEKDAYS_MON_TO_FRI,
+      conflict: 'replace' as const,
+      skipHolidays: true,
+    };
+    store.getState().commit('apply shifts', (changes) => applyShifts(changes, request), {
+      toast: (result) => appliedMessage(request, result),
+    });
+    expect(shiftCount(store.getState())).toBe(20);
+    expect(store.getState().toast).toMatchObject({ message: 'Applied 20 shifts.', undo: true });
+    store.getState().undo();
+    expect(shiftCount(store.getState())).toBe(0);
+    expect(store.getState().toast?.message).toBe('Undid: apply shifts.');
+  });
+});
