@@ -9,15 +9,6 @@ import type { ISODate } from './types';
 const DAY_MS = 86_400_000;
 
 export const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-export const WEEKDAY_LONG = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-] as const;
 export const MONTH_SHORT = [
   'Jan',
   'Feb',
@@ -159,12 +150,4 @@ export function overlapDays(a: ISODate, b: ISODate, c: ISODate, d: ISODate): num
   const start = a > c ? a : c;
   const end = b < d ? b : d;
   return start > end ? 0 : daysBetween(start, end) + 1;
-}
-
-export function minDate(a: ISODate, b: ISODate): ISODate {
-  return a < b ? a : b;
-}
-
-export function maxDate(a: ISODate, b: ISODate): ISODate {
-  return a > b ? a : b;
 }

@@ -124,3 +124,52 @@ export function trackPosition(
   const clampedTo = Math.min(Math.max(to - fromHour * 60, 0), span);
   return { left: clampedFrom / span, width: Math.max(clampedTo - clampedFrom, 0) / span };
 }
+
+export interface DayCoverage {
+  /** People working each hour from the range start. */
+  counts: number[];
+  /** "N on" for the day. */
+  total: number;
+}
+
+const coverageCache = new WeakMap<
+  readonly (readonly Shift[])[],
+  {
+    yesterday: readonly (readonly Shift[])[];
+    matcher: unknown;
+    from: number;
+    to: number;
+    result: DayCoverage;
+  }
+>();
+
+/**
+ * Coverage for one date from everyone's shifts that day and the day before
+ * (stable slices from the schedule index). Cached per slice, so a paint only
+ * recomputes the day it touched.
+ */
+export function dayCoverage(
+  today: readonly (readonly Shift[])[],
+  yesterday: readonly (readonly Shift[])[],
+  matcher: Pick<Matcher, 'shift'>,
+  fromHour: number,
+  toHour: number,
+): DayCoverage {
+  const cached = coverageCache.get(today);
+  if (
+    cached &&
+    cached.yesterday === yesterday &&
+    cached.matcher === matcher &&
+    cached.from === fromHour &&
+    cached.to === toHour
+  ) {
+    return cached.result;
+  }
+  const people = today.map((shifts, i) => ({ employeeId: '', today: shifts, yesterday: yesterday[i] ?? [] }));
+  const result = {
+    counts: hourlyCoverage(people, matcher, fromHour, toHour),
+    total: headcount(people, matcher),
+  };
+  coverageCache.set(today, { yesterday, matcher, from: fromHour, to: toHour, result });
+  return result;
+}

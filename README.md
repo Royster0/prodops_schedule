@@ -1,75 +1,77 @@
-# React + TypeScript + Vite
+# Team schedule
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A shift scheduling app for a small team (5 people today, room for about 30). A manager sees the
+schedule as a visual grid and changes it by painting: pick a shift template from the palette, then
+tap or drag across days. Scheduling only: there is nothing about pay, wages or cost.
 
-Currently, two official plugins are available:
+Built with React, TypeScript, Vite, [Motion](https://motion.dev) for animation and
+[Zustand](https://zustand.docs.pmnd.rs) for state. No CSS framework, no UI kit, no date library.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Scripts
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev        # start the dev server
+npm run build      # type-check and build for production
+npm test           # run the unit tests once (Vitest)
+npm run test:watch # run tests on change
+npm run lint       # ESLint
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## What it does
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Views:** Day (hour timeline), Week, 2 weeks and Month, with previous, next and Today.
+- **Painting:** template brushes, Erase, and Vacation, Sick, Personal and Unavailable brushes.
+  Drag across cells to paint many; tap a date header to fill that day for everyone shown.
+- **Selection:** tap avatars to select people. Painting a selected person's day fills it for
+  everyone selected.
+- **Apply shifts:** a template, custom times, a 1 or 2 week work pattern, or time off, for one
+  person, the selection, everyone shown or a tag, over any dates, with a plain summary first.
+- **Time off and holidays:** ranges that merge and split as you paint; holidays are highlighted and
+  skipped when applying. Common US holidays can be added in one step.
+- **Filters** by person, tag and shift type; **coverage** per hour on every day; **undo** for every
+  change (Ctrl or Cmd+Z).
+- **Manage** people, templates, patterns, tags, holidays and settings; export and import JSON.
+- Light and dark themes, responsive down to 360px, keyboard shortcuts, reduced motion support.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Keyboard: arrows move the period, T today, D / W / M switch views, V select, E erase, 1 to 9 pick
+templates, Escape returns to Select, Ctrl or Cmd+Z undoes.
+
+## How the code is organized
 
 ```
+src/
+  domain/   Pure, tested scheduling rules. No React.
+            types, dates, time, format, color, shifts, changeSet, undo, painting, timeOff,
+            apply, patterns, filters, coverage, holidays, copy, manage, demo, seed, period,
+            scheduleIndex
+  data/     Storage: the ScheduleRepository interface, LocalStorageRepository, schema and
+            migrations, export and import, per-device preferences.
+  store/    One Zustand store composed from slices (data, undo, view, tool, selection, filters,
+            ui), memoized selectors, and board actions.
+  components/ Shared UI: Header, Dock, FilterBar, SelectionBar, HintBar, Toast, Popover, Menu,
+            Sheet, Segmented, Tabs, ShiftBlock, ShiftBar, TimeOffBlock, CoverageStrip, Avatar,
+            form controls.
+  views/    Board, WeekView (Week and 2 weeks), DayView, MonthView, EmptyState.
+  sheets/   Dialogs: shift, time off, apply, manage (one file per tab), person, template,
+            pattern, tag and import.
+  hooks/    usePaintStroke, useKeyboardShortcuts, useMediaQuery, useNow, useAppLifecycle.
+  styles/   tokens.css (light and dark design tokens) and global.css.
+  testing/  Fixtures and in-memory storage for tests.
+```
+
+Every change goes through one path: a domain function writes to a `ChangeSet`, which records each
+change as a `{ collection, id, before, after }` op. `commit()` in the store applies the ops, pushes
+one undo entry and hands the same batch to the repository. Undo replays the `before` values in
+reverse.
+
+Rendering stays fast while painting: the schedule index hands out per-cell, per-row and per-day
+arrays that are reused when nothing in them changed, so memoized cells, rows and days re-render
+only when their own data did. Pointer strokes are tracked outside React state.
+
+## Storage
+
+Data is saved in this browser under one versioned localStorage key (`schedule.v1`), with writes
+debounced by about 250 ms. UI preferences (view and theme) live under `schedule.prefs.v1`.
+[SUPABASE.md](SUPABASE.md) describes how to move storage to Supabase, with row level security and
+realtime, without changing the UI.

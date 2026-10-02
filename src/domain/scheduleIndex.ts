@@ -50,3 +50,69 @@ export function timeOffIn(cells: TimeOffCells, employeeId: ID, date: ISODate): T
 function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
   return a.length === b.length && a.every((item, i) => item === b[i]);
 }
+
+/*
+ * Row and day slices. A Week row needs one person's shifts across the dates
+ * shown; a Month day needs everyone's shifts on one date. These return the
+ * previous slice when nothing in it changed, so memoized rows and days only
+ * re-render when one of their own cells did.
+ */
+
+const MAX_CACHED_SLICES = 4000;
+const sliceCache = new Map<string, readonly unknown[]>();
+
+function shared<T>(key: string, next: readonly T[]): readonly T[] {
+  const previous = sliceCache.get(key) as readonly T[] | undefined;
+  if (previous && sameItems(previous, next)) return previous;
+  if (sliceCache.size > MAX_CACHED_SLICES) sliceCache.clear();
+  sliceCache.set(key, next);
+  return next;
+}
+
+/** One person's shifts on each date, in date order. */
+export function rowShifts(
+  cells: ShiftCells,
+  employeeId: ID,
+  dates: readonly ISODate[],
+): readonly (readonly Shift[])[] {
+  return shared(
+    `row-shifts|${employeeId}|${dates[0]}|${dates.length}`,
+    dates.map((d) => shiftsIn(cells, employeeId, d)),
+  );
+}
+
+/** One person's time off on each date. */
+export function rowTimeOff(
+  cells: TimeOffCells,
+  employeeId: ID,
+  dates: readonly ISODate[],
+): readonly (TimeOff | undefined)[] {
+  return shared(
+    `row-off|${employeeId}|${dates[0]}|${dates.length}`,
+    dates.map((d) => timeOffIn(cells, employeeId, d)),
+  );
+}
+
+/** Everyone's shifts on one date, in the given people order. */
+export function dayShifts(
+  cells: ShiftCells,
+  employeeIds: readonly ID[],
+  date: ISODate,
+): readonly (readonly Shift[])[] {
+  return shared(
+    `day-shifts|${date}|${employeeIds.join()}`,
+    employeeIds.map((id) => shiftsIn(cells, id, date)),
+  );
+}
+
+/** Everyone's time off on one date. */
+export function dayTimeOff(
+  cells: TimeOffCells,
+  employeeIds: readonly ID[],
+  date: ISODate,
+): readonly (TimeOff | undefined)[] {
+  return shared(
+    `day-off|${date}|${employeeIds.join()}`,
+    employeeIds.map((id) => timeOffIn(cells, id, date)),
+  );
+}

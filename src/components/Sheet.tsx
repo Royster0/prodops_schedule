@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion, type MotionProps } from 'motion/react';
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { PHONE_SHEET, useMediaQuery } from '../hooks/useMediaQuery';
@@ -23,6 +23,7 @@ interface SheetFrameProps {
  */
 export function SheetFrame({ open, onClose, contentKey, children }: SheetFrameProps) {
   const phone = useMediaQuery(PHONE_SHEET);
+  const reduceMotion = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
 
@@ -86,14 +87,7 @@ export function SheetFrame({ open, onClose, contentKey, children }: SheetFramePr
             tabIndex={-1}
             className={[styles.panel, phone && styles.bottom].filter(Boolean).join(' ')}
             onKeyDown={onKeyDown}
-            initial={phone ? { y: '100%' } : { opacity: 0, scale: 0.96 }}
-            animate={phone ? { y: 0 } : { opacity: 1, scale: 1 }}
-            exit={phone ? { y: '100%' } : { opacity: 0, scale: 0.96 }}
-            transition={
-              phone
-                ? { type: 'spring', bounce: 0, duration: 0.32 }
-                : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }
-            }
+            {...panelMotion(phone, Boolean(reduceMotion))}
           >
             {children}
           </motion.div>
@@ -102,6 +96,32 @@ export function SheetFrame({ open, onClose, contentKey, children }: SheetFramePr
     </AnimatePresence>,
     document.body,
   );
+}
+
+/** Desktop fades and scales from 0.96, phones slide up. Reduced motion gets a plain fade. */
+function panelMotion(phone: boolean, reduceMotion: boolean): MotionProps {
+  if (reduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.15 },
+    };
+  }
+  if (phone) {
+    return {
+      initial: { y: '100%' },
+      animate: { y: 0 },
+      exit: { y: '100%' },
+      transition: { type: 'spring', bounce: 0, duration: 0.32 },
+    };
+  }
+  return {
+    initial: { opacity: 0, scale: 0.96 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.96 },
+    transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+  };
 }
 
 interface SheetProps {

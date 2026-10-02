@@ -96,3 +96,15 @@ describe('time track', () => {
     expect(pos.width).toBeCloseTo(1 / 18);
   });
 });
+
+describe('dayCoverage', () => {
+  it('matches hourly coverage and caches per slice', async () => {
+    const { dayCoverage } = await import('./coverage');
+    const today = [[shift('a', 'ana', 'd', { start: '08:00', end: '10:00' })], []];
+    const yesterday = [[], [shift('n', 'ben', 'd-1', { start: '22:00', end: '06:00' })]];
+    const first = dayCoverage(today, yesterday, everything, 5, 10);
+    expect(first).toEqual({ counts: [1, 0, 0, 1, 1], total: 1 });
+    expect(dayCoverage(today, yesterday, everything, 5, 10)).toBe(first);
+    expect(dayCoverage(today, yesterday, everything, 6, 10)).not.toBe(first);
+  });
+});

@@ -3,9 +3,9 @@ import { memo, useMemo, type CSSProperties } from 'react';
 import { Avatar } from '../components/Avatar';
 import { TIME_OFF_COLORS, TIME_OFF_LABELS, textOn } from '../domain/color';
 import { headcount } from '../domain/coverage';
-import { MONTH_SHORT, WEEKDAY_SHORT, addDays, isSameMonth, isWeekend, parts } from '../domain/dates';
+import { MONTH_SHORT, WEEKDAY_SHORT, dateRange, isSameMonth, isWeekend, parts } from '../domain/dates';
 import { formatDayLabel, initials } from '../domain/format';
-import { shiftsIn, timeOffIn, type ShiftCells, type TimeOffCells } from '../domain/scheduleIndex';
+import { dayShifts, dayTimeOff, shiftsIn, type ShiftCells } from '../domain/scheduleIndex';
 import { hoursOf, shiftColor, shiftName } from '../domain/shifts';
 import { formatHours, formatTimeRange } from '../domain/time';
 import type { Employee, Holiday, ISODate, Shift, TimeOff } from '../domain/types';
@@ -17,6 +17,7 @@ import {
   selectShiftCells,
   selectTimeOffCells,
   selectVisibleEmployees,
+  selectVisibleIds,
 } from '../store/derived';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import { useBlockContext, type BlockContext } from './blockContext';
@@ -28,6 +29,7 @@ import { NoMatches } from './WeekView';
 export function MonthView() {
   const period = useScheduleStore(selectPeriod);
   const employees = useScheduleStore(selectVisibleEmployees);
+  const employeeIds = useScheduleStore(selectVisibleIds);
   const shiftCells = useScheduleStore(selectShiftCells);
   const timeOffCells = useScheduleStore(selectTimeOffCells);
   const holidays = useScheduleStore(selectHolidaysByDate);
@@ -54,8 +56,8 @@ export function MonthView() {
             isToday={date === today}
             holiday={holidays.get(date)}
             employees={employees}
-            shiftCells={shiftCells}
-            timeOffCells={timeOffCells}
+            shifts={dayShifts(shiftCells, employeeIds, date)}
+            timeOff={dayTimeOff(timeOffCells, employeeIds, date)}
             painting={painting}
             ctx={ctx}
           />
@@ -77,17 +79,18 @@ interface LegendProps {
 function Legend({ employees, shiftCells, start, end }: LegendProps) {
   const selectedIds = useScheduleStore((s) => s.selectedIds);
   const { toggleSelected, setSelected, clearSelection } = scheduleStore.getState();
+  const monthDates = useMemo(() => dateRange(start, end), [start, end]);
   const hours = useMemo(() => {
     const totals = new Map<string, number>();
     for (const employee of employees) {
       let sum = 0;
-      for (let date = start; date <= end; date = addDays(date, 1)) {
+      for (const date of monthDates) {
         for (const shift of shiftsIn(shiftCells, employee.id, date)) sum += hoursOf(shift);
       }
       totals.set(employee.id, sum);
     }
     return totals;
-  }, [employees, shiftCells, start, end]);
+  }, [employees, shiftCells, monthDates]);
 
   return (
     <div className={styles.legend}>
@@ -127,29 +130,27 @@ interface MonthDayProps {
   isToday: boolean;
   holiday: Holiday | undefined;
   employees: readonly Employee[];
-  shiftCells: ShiftCells;
-  timeOffCells: TimeOffCells;
+  /** Each person's shifts and time off on this date, in `employees` order. */
+  shifts: readonly (readonly Shift[])[];
+  timeOff: readonly (TimeOff | undefined)[];
   painting: boolean;
   ctx: BlockContext;
 }
 
+/** One calendar day. Re-renders only when one of its own slots changed. */
 const MonthDay = memo(function MonthDay({
   date,
   inMonth,
   isToday,
   holiday,
   employees,
-  shiftCells,
-  timeOffCells,
+  shifts,
+  timeOff,
   painting,
   ctx,
 }: MonthDayProps) {
   const { month, day } = parts(date);
-  const people = employees.map((e) => ({
-    employeeId: e.id,
-    today: shiftsIn(shiftCells, e.id, date),
-    yesterday: [],
-  }));
+  const people = employees.map((e, i) => ({ employeeId: e.id, today: shifts[i], yesterday: [] }));
   const on = headcount(people, ctx.matcher);
   const label = painting
     ? `Fill ${formatDayLabel(date)} for everyone shown`
@@ -182,13 +183,13 @@ const MonthDay = memo(function MonthDay({
       </button>
       {holiday && <span className={styles.holidayName}>{holiday.name}</span>}
       <div className={styles.slots}>
-        {employees.map((employee) => (
+        {employees.map((employee, i) => (
           <MonthSlot
             key={employee.id}
             employee={employee}
             date={date}
-            shifts={shiftsIn(shiftCells, employee.id, date)}
-            timeOff={timeOffIn(timeOffCells, employee.id, date)}
+            shifts={shifts[i]}
+            timeOff={timeOff[i]}
             ctx={ctx}
           />
         ))}

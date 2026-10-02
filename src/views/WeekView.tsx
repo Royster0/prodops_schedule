@@ -4,10 +4,10 @@ import { CoverageStrip } from '../components/CoverageStrip';
 import { Icon } from '../components/Icon';
 import { ShiftBlock } from '../components/ShiftBlock';
 import { TimeOffBlock } from '../components/TimeOffBlock';
-import { conflictingShiftIds, headcount, hourlyCoverage } from '../domain/coverage';
+import { conflictingShiftIds, dayCoverage } from '../domain/coverage';
 import { MONTH_SHORT, WEEKDAY_SHORT, addDays, dayOfWeek, isWeekend, parts } from '../domain/dates';
 import { count, formatDayLabel } from '../domain/format';
-import { shiftsIn, timeOffIn, type ShiftCells, type TimeOffCells } from '../domain/scheduleIndex';
+import { dayShifts, rowShifts, rowTimeOff } from '../domain/scheduleIndex';
 import { hoursOf } from '../domain/shifts';
 import type { Clock } from '../domain/time';
 import type { Employee, Holiday, ID, ISODate, Shift, TimeOff } from '../domain/types';
@@ -19,6 +19,7 @@ import {
   selectShiftCells,
   selectTimeOffCells,
   selectVisibleEmployees,
+  selectVisibleIds,
 } from '../store/derived';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import { useBlockContext, type BlockContext } from './blockContext';
@@ -40,20 +41,15 @@ export function WeekView({ compact }: { compact: boolean }) {
   const dates = period.dates;
   const previousDates = useMemo(() => dates.map((date) => addDays(date, -1)), [dates]);
 
-  const coverage = useMemo(
-    () =>
-      dates.map((date, i) => {
-        const people = employees.map((e) => ({
-          employeeId: e.id,
-          today: shiftsIn(shiftCells, e.id, date),
-          yesterday: shiftsIn(shiftCells, e.id, previousDates[i]),
-        }));
-        return {
-          counts: hourlyCoverage(people, ctx.matcher, ctx.dayStart, ctx.dayEnd),
-          total: headcount(people, ctx.matcher),
-        };
-      }),
-    [dates, previousDates, employees, shiftCells, ctx.matcher, ctx.dayStart, ctx.dayEnd],
+  const employeeIds = useScheduleStore(selectVisibleIds);
+  const coverage = dates.map((date, i) =>
+    dayCoverage(
+      dayShifts(shiftCells, employeeIds, date),
+      dayShifts(shiftCells, employeeIds, previousDates[i]),
+      ctx.matcher,
+      ctx.dayStart,
+      ctx.dayEnd,
+    ),
   );
 
   return (
@@ -82,9 +78,9 @@ export function WeekView({ compact }: { compact: boolean }) {
           key={employee.id}
           employee={employee}
           dates={dates}
-          previousDates={previousDates}
-          shiftCells={shiftCells}
-          timeOffCells={timeOffCells}
+          shifts={rowShifts(shiftCells, employee.id, dates)}
+          yesterday={rowShifts(shiftCells, employee.id, previousDates)}
+          timeOff={rowTimeOff(timeOffCells, employee.id, dates)}
           holidays={holidays}
           today={today}
           selected={selectedIds.has(employee.id)}
@@ -190,9 +186,10 @@ const DayHeader = memo(function DayHeader({
 interface WeekRowProps {
   employee: Employee;
   dates: readonly ISODate[];
-  previousDates: readonly ISODate[];
-  shiftCells: ShiftCells;
-  timeOffCells: TimeOffCells;
+  /** This person's shifts and time off for each date, plus the day before each date. */
+  shifts: readonly (readonly Shift[])[];
+  yesterday: readonly (readonly Shift[])[];
+  timeOff: readonly (TimeOff | undefined)[];
   holidays: ReadonlyMap<ISODate, Holiday>;
   today: ISODate;
   selected: boolean;
@@ -200,12 +197,13 @@ interface WeekRowProps {
   ctx: BlockContext;
 }
 
+/** One person's row. Re-renders only when one of its own cells changed. */
 const WeekRow = memo(function WeekRow({
   employee,
   dates,
-  previousDates,
-  shiftCells,
-  timeOffCells,
+  shifts,
+  yesterday,
+  timeOff,
   holidays,
   today,
   selected,
@@ -214,10 +212,9 @@ const WeekRow = memo(function WeekRow({
 }: WeekRowProps) {
   let hours = 0;
   let days = 0;
-  for (const date of dates) {
-    const shifts = shiftsIn(shiftCells, employee.id, date);
-    if (shifts.length > 0) days++;
-    for (const shift of shifts) hours += hoursOf(shift);
+  for (const cell of shifts) {
+    if (cell.length > 0) days++;
+    for (const shift of cell) hours += hoursOf(shift);
   }
   return (
     <>
@@ -230,9 +227,9 @@ const WeekRow = memo(function WeekRow({
           employeeId={employee.id}
           employeeName={employee.name}
           date={date}
-          shifts={shiftsIn(shiftCells, employee.id, date)}
-          yesterday={shiftsIn(shiftCells, employee.id, previousDates[i])}
-          timeOff={timeOffIn(timeOffCells, employee.id, date)}
+          shifts={shifts[i]}
+          yesterday={yesterday[i]}
+          timeOff={timeOff[i]}
           tint={
             date === today ? 'today' : holidays.has(date) ? 'holiday' : isWeekend(date) ? 'weekend' : null
           }
@@ -279,7 +276,7 @@ const WeekCell = memo(function WeekCell({
       data-employee-id={employeeId}
       data-date={date}
     >
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="popLayout">
         {timeOff && (
           <TimeOffBlock
             key="time-off"
