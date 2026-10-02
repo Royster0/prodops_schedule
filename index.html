@@ -3,8 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>prodops_schedule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap"
+    />
+    <title>Team schedule</title>
+    <script>
+      // Apply the per-device theme before first paint so there is no flash.
+      try {
+        var prefs = JSON.parse(localStorage.getItem('schedule.prefs.v1') || '{}');
+        if (prefs.theme === 'light' || prefs.theme === 'dark') {
+          document.documentElement.dataset.theme = prefs.theme;
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,0 +1,130 @@
+/*
+ * Design tokens. Light is the default; dark applies when the system prefers it
+ * (unless the person picked Light) or when they picked Dark explicitly.
+ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --sunk: #e4e9ee;
+  --ink: #16202b;
+  --ink-2: #3a4755;
+  --muted: #677483;
+  --line: #d6dde4;
+  --line-2: #e6eaef;
+  --primary: #1c3a5e;
+  --primary-ink: #ffffff;
+  --today: #ffc21a;
+  --today-ink: #2b2000;
+  --today-tint: rgb(255 194 26 / 0.07);
+  --holiday: #fff6dc;
+  --holiday-ink: #8a5a00;
+  --danger: #b8322a;
+  --focus: #2f6feb;
+
+  --overlay: rgb(16 21 27 / 0.42);
+  --shadow-pop: 0 1px 2px rgb(22 32 43 / 0.08), 0 10px 28px rgb(22 32 43 / 0.16);
+  --shadow-sheet: 0 24px 64px rgb(22 32 43 / 0.28);
+  --hover: rgb(22 32 43 / 0.05);
+  --pressed: rgb(22 32 43 / 0.09);
+
+  /* Shape */
+  --radius-block: 9px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+  --radius-sheet: 18px;
+
+  /* Type */
+  --font: 'Schibsted Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+
+  /* Layout */
+  --name-col: 204px;
+  --day-min: 118px;
+  --header-gap: 8px;
+  --control-h: 36px;
+
+  /* Time off types */
+  --off-vacation: #1677a8;
+  --off-sick: #c8412a;
+  --off-personal: #7b3fa0;
+  --off-unavailable: #4d5f70;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg: #10151b;
+    --surface: #18202a;
+    --surface-2: #1d2631;
+    --sunk: #121920;
+    --ink: #e6ecf2;
+    --ink-2: #c1cbd6;
+    --muted: #8c99a8;
+    --line: #2b3643;
+    --line-2: #222c38;
+    --primary: #a9c4ea;
+    --primary-ink: #0f1a28;
+    --today: #ffc21a;
+    --today-ink: #2b2000;
+    --today-tint: rgb(255 194 26 / 0.06);
+    --holiday: #2a2616;
+    --holiday-ink: #ffcf4d;
+    --danger: #ff7b6e;
+    --focus: #7fa8ff;
+
+    --overlay: rgb(0 0 0 / 0.55);
+    --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px rgb(0 0 0 / 0.45);
+    --shadow-sheet: 0 24px 64px rgb(0 0 0 / 0.55);
+    --hover: rgb(230 236 242 / 0.06);
+    --pressed: rgb(230 236 242 / 0.1);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #10151b;
+  --surface: #18202a;
+  --surface-2: #1d2631;
+  --sunk: #121920;
+  --ink: #e6ecf2;
+  --ink-2: #c1cbd6;
+  --muted: #8c99a8;
+  --line: #2b3643;
+  --line-2: #222c38;
+  --primary: #a9c4ea;
+  --primary-ink: #0f1a28;
+  --today: #ffc21a;
+  --today-ink: #2b2000;
+  --today-tint: rgb(255 194 26 / 0.06);
+  --holiday: #2a2616;
+  --holiday-ink: #ffcf4d;
+  --danger: #ff7b6e;
+  --focus: #7fa8ff;
+
+  --overlay: rgb(0 0 0 / 0.55);
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px rgb(0 0 0 / 0.45);
+  --shadow-sheet: 0 24px 64px rgb(0 0 0 / 0.55);
+  --hover: rgb(230 236 242 / 0.06);
+  --pressed: rgb(230 236 242 / 0.1);
+}
+
+@media (max-width: 760px) {
+  :root {
+    --name-col: 138px;
+    --day-min: 96px;
+  }
+}
