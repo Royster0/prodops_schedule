@@ -39,6 +39,7 @@ describe('period', () => {
     expect(month.end).toBe('2026-10-31');
     expect(month.dates[0]).toBe('2026-09-28');
     expect(periodLabel(month)).toBe('October 2026');
+    expect(periodLabel(month, true)).toBe('Oct 2026');
   });
 
   it('moves by one period', () => {

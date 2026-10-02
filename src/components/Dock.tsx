@@ -1,9 +1,9 @@
-import { motion } from 'motion/react';
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { TIME_OFF_COLORS, TIME_OFF_LABELS, TIME_OFF_TYPES, textOn } from '../domain/color';
 import { sameTool } from '../domain/painting';
 import { formatTimeRange } from '../domain/time';
-import type { Tool } from '../domain/types';
+import type { TimeOffType, Tool } from '../domain/types';
 import { selectTemplates } from '../store/derived';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import styles from './Dock.module.css';
@@ -57,12 +57,7 @@ export function Dock() {
 
       <span className={styles.divider} aria-hidden="true" />
 
-      {TIME_OFF_TYPES.map((type) => (
-        <ToolButton key={type} tool={{ kind: 'timeOff', type }} active={tool} onPick={toggleTool}>
-          <span className={styles.hatch} style={{ '--off': TIME_OFF_COLORS[type] } as CSSProperties} />
-          <span className={styles.toolLabel}>{TIME_OFF_LABELS[type]}</span>
-        </ToolButton>
-      ))}
+      <TimeOffGroup tool={tool} onPick={toggleTool} />
 
       <span className={styles.divider} aria-hidden="true" />
 
@@ -109,5 +104,66 @@ function ToolButton({ tool, active, onPick, shortcut, children }: ToolButtonProp
       )}
       {children}
     </button>
+  );
+}
+
+function Hatch({ type }: { type: TimeOffType }) {
+  return <span className={styles.hatch} style={{ '--off': TIME_OFF_COLORS[type] } as CSSProperties} />;
+}
+
+/**
+ * The time off brushes, collapsed behind one button. Collapsed, it shows the
+ * active time off brush (if any) so the palette still says what is painting.
+ */
+function TimeOffGroup({ tool, onPick }: { tool: Tool; onPick(tool: Tool): void }) {
+  const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const active = tool.kind === 'timeOff' ? tool.type : null;
+  const hidden = reduceMotion ? { opacity: 0 } : { width: 0, opacity: 0 };
+
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.tool}
+        aria-expanded={open}
+        aria-controls="dock-time-off"
+        aria-pressed={!open && active ? true : undefined}
+        onClick={() => setOpen((o) => !o)}
+        title={open ? 'Hide time off brushes' : 'Show time off brushes'}
+      >
+        {!open && active && (
+          <motion.span
+            layoutId="dock-active-ring"
+            className={styles.ring}
+            transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+          />
+        )}
+        {!open && active ? <Hatch type={active} /> : <Icon name="timeOff" size={18} />}
+        <span className={styles.toolLabel}>{!open && active ? TIME_OFF_LABELS[active] : 'Time off'}</span>
+        <Icon name={open ? 'chevronLeft' : 'chevronRight'} size={16} className={styles.chevron} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            id="dock-time-off"
+            role="group"
+            aria-label="Time off brushes"
+            className={styles.group}
+            initial={hidden}
+            animate={{ width: 'auto', opacity: 1 }}
+            exit={hidden}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {TIME_OFF_TYPES.map((type) => (
+              <ToolButton key={type} tool={{ kind: 'timeOff', type }} active={tool} onPick={onPick}>
+                <Hatch type={type} />
+                <span className={styles.toolLabel}>{TIME_OFF_LABELS[type]}</span>
+              </ToolButton>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

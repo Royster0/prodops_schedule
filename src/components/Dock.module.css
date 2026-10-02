@@ -116,6 +116,19 @@
   background: var(--surface-2);
 }
 
+.group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  overflow: hidden;
+}
+
+.chevron {
+  margin-right: -4px;
+  color: var(--muted);
+}
+
 .divider {
   width: 1px;
   height: 28px;

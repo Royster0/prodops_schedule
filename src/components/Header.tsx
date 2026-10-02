@@ -65,14 +65,28 @@ export function Header() {
 
       <div className={styles.navRow}>
         <nav className={styles.nav} aria-label="Dates">
-          <Button icon="chevronLeft" iconOnly variant="ghost" onClick={goPrev} title="Previous (←)">
+          <Button
+            icon="chevronLeft"
+            iconOnly
+            variant="ghost"
+            size={narrow ? 'sm' : 'md'}
+            onClick={goPrev}
+            title="Previous (←)"
+          >
             Previous
           </Button>
-          <Button icon="chevronRight" iconOnly variant="ghost" onClick={goNext} title="Next (→)">
+          <Button
+            icon="chevronRight"
+            iconOnly
+            variant="ghost"
+            size={narrow ? 'sm' : 'md'}
+            onClick={goNext}
+            title="Next (→)"
+          >
             Next
           </Button>
           <h2 className={styles.range} aria-live="polite">
-            {periodLabel(period)}
+            {periodLabel(period, tiny)}
           </h2>
           <Button size={narrow ? 'sm' : 'md'} onClick={goToday} title="Today (T)">
             Today

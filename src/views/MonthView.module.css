@@ -157,7 +157,93 @@
   white-space: nowrap;
 }
 
-/* Slots: one per person, same order every day */
+/* Shift list: the default, uncluttered month */
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 20px;
+  min-width: 0;
+  padding: 0 6px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.entry:hover {
+  filter: brightness(1.06);
+}
+
+.entryDimmed {
+  opacity: 0.18 !important;
+  filter: saturate(0.15);
+}
+
+.entryName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 750;
+}
+
+.shortName {
+  display: none;
+}
+
+.entryTime {
+  flex: none;
+  margin-left: auto;
+  font-weight: 500;
+  opacity: 0.92;
+}
+
+/* Narrow days: initials only, then times drop. */
+@container (max-width: 150px) {
+  .fullName {
+    display: none;
+  }
+
+  .shortName {
+    display: inline;
+  }
+}
+
+@container (max-width: 96px) {
+  .entryTime {
+    display: none;
+  }
+
+  .entry {
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+.more {
+  align-self: flex-start;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--focus);
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+/* Slots while painting: one per person, same order every day */
 
 .slots {
   display: flex;

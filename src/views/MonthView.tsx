@@ -25,7 +25,11 @@ import { handleCellClick, handleDateClick } from './cellActions';
 import styles from './MonthView.module.css';
 import { NoMatches } from './WeekView';
 
-/** Month view: a calendar where every day lists one slot per person, always in the same order. */
+/**
+ * Month view: a calendar listing each day's shifts and holidays. While a brush
+ * is active, every day shows one slot per person, always in the same order, so
+ * any day can be painted.
+ */
 export function MonthView() {
   const period = useScheduleStore(selectPeriod);
   const employees = useScheduleStore(selectVisibleEmployees);
@@ -182,21 +186,86 @@ const MonthDay = memo(function MonthDay({
         <span className={styles.on}>{on} on</span>
       </button>
       {holiday && <span className={styles.holidayName}>{holiday.name}</span>}
-      <div className={styles.slots}>
-        {employees.map((employee, i) => (
-          <MonthSlot
-            key={employee.id}
-            employee={employee}
-            date={date}
-            shifts={shifts[i]}
-            timeOff={timeOff[i]}
-            ctx={ctx}
-          />
-        ))}
-      </div>
+      {painting ? (
+        // While a brush is active, every person gets a slot so any day can be painted.
+        <div className={styles.slots}>
+          {employees.map((employee, i) => (
+            <MonthSlot
+              key={employee.id}
+              employee={employee}
+              date={date}
+              shifts={shifts[i]}
+              timeOff={timeOff[i]}
+              ctx={ctx}
+            />
+          ))}
+        </div>
+      ) : (
+        <ShiftList date={date} employees={employees} shifts={shifts} ctx={ctx} />
+      )}
     </div>
   );
 });
+
+/** Most entries a day lists before "+N more". */
+const MAX_ENTRIES = 6;
+
+interface ShiftListProps {
+  date: ISODate;
+  employees: readonly Employee[];
+  shifts: readonly (readonly Shift[])[];
+  ctx: BlockContext;
+}
+
+/** The day's shifts only: who works and when, in people order. */
+function ShiftList({ date, employees, shifts, ctx }: ShiftListProps) {
+  const entries = employees.flatMap((employee, i) => shifts[i].map((shift) => ({ employee, shift })));
+  const shown = entries.length > MAX_ENTRIES ? entries.slice(0, MAX_ENTRIES - 1) : entries;
+  const more = entries.length - shown.length;
+
+  return (
+    <div className={styles.entries}>
+      <AnimatePresence initial={false} mode="popLayout">
+        {shown.map(({ employee, shift }) => {
+          const color = shiftColor(shift, ctx.templates);
+          const time = formatTimeRange(shift.start, shift.end, ctx.clock);
+          return (
+            <motion.button
+              key={shift.id}
+              type="button"
+              className={[styles.entry, !ctx.matcher.shift(shift) && styles.entryDimmed]
+                .filter(Boolean)
+                .join(' ')}
+              style={{ background: color, color: textOn(color) }}
+              data-cell=""
+              data-employee-id={employee.id}
+              data-date={date}
+              data-shift-id={shift.id}
+              onClick={handleCellClick}
+              aria-label={`${employee.name}, ${shiftName(shift, ctx.templates)}, ${time}, ${formatHours(hoursOf(shift))}`}
+              title={`${employee.name}: ${shiftName(shift, ctx.templates)}, ${time}`}
+              initial={isFreshShift(shift.id) ? { scale: 0.82, opacity: 0 } : false}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              transition={{ type: 'spring', duration: 0.28, bounce: 0.4 }}
+            >
+              <span className={styles.entryName}>
+                <span className={styles.fullName}>{employee.name}</span>
+                <span className={styles.shortName}>{initials(employee.name)}</span>
+              </span>
+              <span className={styles.entryTime}>{time}</span>
+            </motion.button>
+          );
+        })}
+      </AnimatePresence>
+      {more > 0 && (
+        <button type="button" className={styles.more} onClick={() => scheduleStore.getState().openDay(date)}>
+          +{more} more
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface MonthSlotProps {
   employee: Employee;

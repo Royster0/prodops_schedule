@@ -1,4 +1,13 @@
-import { addDays, addMonths, dateRange, monthBounds, monthGrid, startOfWeek } from './dates';
+import {
+  MONTH_SHORT,
+  addDays,
+  addMonths,
+  dateRange,
+  monthBounds,
+  monthGrid,
+  parts,
+  startOfWeek,
+} from './dates';
 import { formatDateRange, formatDayLabel, formatMonthYear } from './format';
 import type { ISODate, ViewMode } from './types';
 
@@ -44,16 +53,18 @@ export function shiftAnchor(view: ViewMode, anchor: ISODate, direction: -1 | 1):
   }
 }
 
-/** Header label: 'Fri, Oct 2', 'Sep 28–Oct 4' or 'October 2026'. */
-export function periodLabel(period: Period): string {
+/** Header label: 'Fri, Oct 2', 'Sep 28–Oct 4' or 'October 2026' ('Oct 2026' when short). */
+export function periodLabel(period: Period, short = false): string {
   switch (period.view) {
     case 'day':
       return formatDayLabel(period.start);
     case 'week':
     case 'twoWeeks':
       return formatDateRange(period.start, period.end);
-    case 'month':
-      return formatMonthYear(period.start);
+    case 'month': {
+      const { year, month } = parts(period.start);
+      return short ? `${MONTH_SHORT[month - 1]} ${year}` : formatMonthYear(period.start);
+    }
   }
 }
 
