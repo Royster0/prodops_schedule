@@ -86,9 +86,10 @@ function initialForm(preset: ApplyPreset = {}): Form {
     who: preset.who ?? (anySelected ? 'selected' : 'shown'),
     employeeId: preset.employeeId ?? visible[0] ?? '',
     tagId: selectTags(state)[0]?.id ?? '',
-    from: period.start,
-    to: period.end,
-    weekdays: [...WEEKDAYS_MON_TO_FRI],
+    from: preset.from ?? period.start,
+    to: preset.to ?? preset.from ?? period.end,
+    // A preset date range (e.g. one tapped day) should not be filtered by weekday.
+    weekdays: preset.from ? [0, 1, 2, 3, 4, 5, 6] : [...WEEKDAYS_MON_TO_FRI],
     conflict: 'replace',
     skipHolidays: true,
   };

@@ -113,3 +113,34 @@ describe('apply shifts through the store', () => {
     expect(store.getState().toast?.message).toBe('Undid: apply shifts.');
   });
 });
+
+describe('painting Month days', () => {
+  it('paints the day for the selected people only, one undo entry per stroke', async () => {
+    const { store } = await setup();
+    store.setState({ view: 'month' });
+    store.getState().setSelected(['ana', 'cy']);
+    store.getState().beginStroke({ kind: 'template', templateId: 'L10' });
+    for (const date of ['2026-10-05', '2026-10-06', '2026-10-07']) store.getState().strokeDay(date);
+    store.getState().endStroke();
+
+    const shifts = Object.values(store.getState().data.shifts);
+    // Cy has time off on the 6th and 7th, so only Ana's three days and Cy's 5th are painted.
+    expect(shifts.map((s) => `${s.employeeId} ${s.date}`).sort()).toEqual([
+      'ana 2026-10-05',
+      'ana 2026-10-06',
+      'ana 2026-10-07',
+      'cy 2026-10-05',
+    ]);
+    expect(store.getState().undoStack).toHaveLength(1);
+  });
+
+  it('paints nothing and explains when nobody is selected', async () => {
+    const { store } = await setup();
+    store.setState({ view: 'month' });
+    store.getState().beginStroke({ kind: 'template', templateId: 'L10' });
+    store.getState().strokeDay('2026-10-05');
+    store.getState().endStroke();
+    expect(shiftCount(store.getState())).toBe(0);
+    expect(store.getState().toast?.message).toMatch(/^Select people above first/);
+  });
+});

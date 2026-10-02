@@ -1,14 +1,14 @@
 import { useEffect, type RefObject } from 'react';
 import { cellKey } from '../domain/changeSet';
 import { scheduleStore } from '../store/useScheduleStore';
-import { cellOf } from '../views/cellActions';
+import { cellOf, dayOf } from '../views/cellActions';
 
 /** Fast drags can skip cells between pointer events; sample the path at this spacing. */
 const SAMPLE_PX = 24;
 
 /**
  * Pointer painting on the board. While a brush is active, pressing on a cell
- * starts a stroke; dragging paints every cell under the pointer. Stroke state
+ * (or a Month day) starts a stroke; dragging paints everything under the pointer. Stroke state
  * stays in this closure (not React state) and each new cell commits through
  * the store, so only touched cells re-render.
  */
@@ -22,20 +22,23 @@ export function usePaintStroke(boardRef: RefObject<HTMLElement | null>): void {
     let last = { x: 0, y: 0 };
 
     const paintAt = (x: number, y: number) => {
-      const cell = cellOf(document.elementFromPoint(x, y));
-      if (!cell) return;
-      const key = cellKey(cell.employeeId, cell.date);
-      if (key === lastKey) return;
+      const element = document.elementFromPoint(x, y);
+      const cell = cellOf(element);
+      const day = cell ? null : dayOf(element);
+      const key = cell ? cellKey(cell.employeeId, cell.date) : day ? `day|${day}` : null;
+      if (!key || key === lastKey) return;
       lastKey = key;
-      scheduleStore.getState().strokeCell(cell.employeeId, cell.date);
+      if (cell) scheduleStore.getState().strokeCell(cell.employeeId, cell.date);
+      else if (day) scheduleStore.getState().strokeDay(day);
     };
 
     const onPointerDown = (event: PointerEvent) => {
       const { tool, beginStroke } = scheduleStore.getState();
       if (tool.kind === 'select' || pointerId !== null) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      // Only cells paint. Names and date headers keep scrolling and clicking.
-      if (!cellOf(event.target as Element)) return;
+      // Only cells and Month days paint. Names and date headers keep scrolling and clicking.
+      const target = event.target as Element;
+      if (!cellOf(target) && !dayOf(target)) return;
       event.preventDefault();
       pointerId = event.pointerId;
       board.setPointerCapture(event.pointerId);

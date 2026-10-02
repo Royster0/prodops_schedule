@@ -52,6 +52,11 @@
   text-decoration: underline;
 }
 
+.legendHint {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
 /* Calendar */
 
 .calendar {
@@ -157,13 +162,15 @@
   white-space: nowrap;
 }
 
-/* Shift list: the default, uncluttered month */
+/* Day body: the day's entries, plus an add area that fills the rest. */
 
-.entries {
+.dayBody {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  min-height: 24px;
 }
 
 .entry {
@@ -179,10 +186,23 @@
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
+  flex: none;
 }
 
 .entry:hover {
   filter: brightness(1.06);
+}
+
+.offEntry {
+  color: color-mix(in srgb, var(--off) 72%, var(--ink));
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--off) 34%, transparent) 0 2px,
+      transparent 2px 6px
+    ),
+    color-mix(in srgb, var(--off) 9%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--off) 70%, transparent);
 }
 
 .entryDimmed {
@@ -201,14 +221,14 @@
   display: none;
 }
 
-.entryTime {
+.entryDetail {
   flex: none;
   margin-left: auto;
   font-weight: 500;
   opacity: 0.92;
 }
 
-/* Narrow days: initials only, then times drop. */
+/* Narrow days: initials only, then the detail drops. */
 @container (max-width: 150px) {
   .fullName {
     display: none;
@@ -220,7 +240,7 @@
 }
 
 @container (max-width: 96px) {
-  .entryTime {
+  .entryDetail {
     display: none;
   }
 
@@ -243,133 +263,39 @@
   text-decoration: underline;
 }
 
-/* Slots while painting: one per person, same order every day */
-
-.slots {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.slot {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 20px;
-  min-width: 0;
-  border-radius: 5px;
-  text-align: left;
-}
-
-.crowded .slot {
-  height: 13px;
-  border-radius: 3px;
-}
-
-.slot:focus-visible {
-  outline-offset: 1px;
-}
-
-.fill,
-.off,
-.empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow: hidden;
-  padding: 0 5px;
-  border-radius: inherit;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.fill {
-  align-items: stretch;
-  padding: 0;
-}
-
-.part {
+/* Tapping the empty part of a day adds a shift (or paints it with a brush). */
+.add {
+  display: grid;
   flex: 1;
-}
-
-.text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 5px;
-}
-
-.text strong,
-.off strong {
-  font-weight: 800;
-}
-
-.detail {
-  display: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-
-@container (min-width: 132px) {
-  .detail {
-    display: inline;
-  }
-}
-
-.off {
-  color: color-mix(in srgb, var(--off) 72%, var(--ink));
-  background:
-    repeating-linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--off) 34%, transparent) 0 2px,
-      transparent 2px 6px
-    ),
-    color-mix(in srgb, var(--off) 9%, var(--surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--off) 70%, transparent);
-}
-
-.empty {
+  place-items: center;
+  min-height: 22px;
+  border-radius: 5px;
   color: var(--muted);
-  box-shadow: inset 0 0 0 1px var(--line);
-  font-weight: 600;
-  opacity: 0.75;
+  opacity: 0;
+  transition: opacity 120ms ease;
 }
 
-.slot:hover .empty {
+.add:hover,
+.add:focus-visible {
   opacity: 1;
-  box-shadow: inset 0 0 0 1px var(--muted);
+  box-shadow: inset 0 0 0 1.5px var(--line);
 }
 
-.dimmed .fill,
-.dimmed .off {
-  opacity: 0.18;
-  filter: saturate(0.15);
+.add:focus-visible {
+  outline-offset: -2px;
 }
 
-.warning {
-  outline: 2px solid var(--danger);
-  outline-offset: 1px;
-}
-
-.crowded .fill,
-.crowded .off,
-.crowded .empty,
-.crowded .text {
-  font-size: 9px;
-}
-
-.crowded .detail {
-  display: none;
+:global([data-painting]) .add:hover {
+  box-shadow: inset 0 0 0 1.5px var(--muted);
 }
 
 @media (max-width: 760px) {
   .legend {
     padding: 8px;
+  }
+
+  .legendHint {
+    display: none;
   }
 
   .day {
@@ -384,16 +310,5 @@
   .dateNumber {
     font-size: 12.5px;
     padding: 1px 4px;
-  }
-
-  .text,
-  .off,
-  .empty {
-    justify-content: center;
-    padding: 0;
-  }
-
-  .detail {
-    display: none !important;
   }
 }

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { memo, useMemo, type CSSProperties } from 'react';
+import { memo, useMemo, type CSSProperties, type MouseEvent } from 'react';
 import { Avatar } from '../components/Avatar';
+import { Icon } from '../components/Icon';
 import { TIME_OFF_COLORS, TIME_OFF_LABELS, textOn } from '../domain/color';
 import { headcount } from '../domain/coverage';
 import { MONTH_SHORT, WEEKDAY_SHORT, dateRange, isSameMonth, isWeekend, parts } from '../domain/dates';
@@ -21,14 +22,14 @@ import {
 } from '../store/derived';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import { useBlockContext, type BlockContext } from './blockContext';
-import { handleCellClick, handleDateClick } from './cellActions';
+import { handleDateClick, handleMonthDayAdd } from './cellActions';
 import styles from './MonthView.module.css';
 import { NoMatches } from './WeekView';
 
 /**
- * Month view: a calendar listing each day's shifts and holidays. While a brush
- * is active, every day shows one slot per person, always in the same order, so
- * any day can be painted.
+ * Month view: a calendar listing each day's shifts, time off and holidays.
+ * Select people in the strip above to paint their days with a brush, or to
+ * add a shift by tapping a day.
  */
 export function MonthView() {
   const period = useScheduleStore(selectPeriod);
@@ -46,7 +47,7 @@ export function MonthView() {
   return (
     <div className={styles.month}>
       <Legend employees={employees} shiftCells={shiftCells} start={period.start} end={period.end} />
-      <div className={[styles.calendar, employees.length > 8 && styles.crowded].filter(Boolean).join(' ')}>
+      <div className={styles.calendar}>
         {weekdays.map((dow) => (
           <div key={dow} className={styles.weekday}>
             {WEEKDAY_SHORT[dow]}
@@ -79,7 +80,7 @@ interface LegendProps {
   end: ISODate;
 }
 
-/** People chips with hours this month. Avatars toggle selection. */
+/** People chips with hours this month. Tapping one selects that person for painting and adding. */
 function Legend({ employees, shiftCells, start, end }: LegendProps) {
   const selectedIds = useScheduleStore((s) => s.selectedIds);
   const { toggleSelected, setSelected, clearSelection } = scheduleStore.getState();
@@ -124,6 +125,9 @@ function Legend({ employees, shiftCells, start, end }: LegendProps) {
       >
         {selectedIds.size > 0 ? 'Clear selection' : 'Select all'}
       </button>
+      {selectedIds.size === 0 && employees.length > 0 && (
+        <span className={styles.legendHint}>Select people to paint or add their shifts.</span>
+      )}
     </div>
   );
 }
@@ -141,7 +145,12 @@ interface MonthDayProps {
   ctx: BlockContext;
 }
 
-/** One calendar day. Re-renders only when one of its own slots changed. */
+/** Most entries a day lists before "+N more". */
+const MAX_ENTRIES = 6;
+
+type Entry = { employee: Employee; shift: Shift } | { employee: Employee; timeOff: TimeOff };
+
+/** One calendar day. Re-renders only when one of its own entries changed. */
 const MonthDay = memo(function MonthDay({
   date,
   inMonth,
@@ -157,8 +166,16 @@ const MonthDay = memo(function MonthDay({
   const people = employees.map((e, i) => ({ employeeId: e.id, today: shifts[i], yesterday: [] }));
   const on = headcount(people, ctx.matcher);
   const label = painting
-    ? `Fill ${formatDayLabel(date)} for everyone shown`
+    ? `Fill ${formatDayLabel(date)} for the selected people, or everyone shown`
     : `${formatDayLabel(date)}${holiday ? `, ${holiday.name}` : ''}, ${on} on. Open in Day view`;
+
+  // In people order: each person's time off, then their shifts.
+  const entries: Entry[] = employees.flatMap((employee, i) => {
+    const off = timeOff[i];
+    return [...(off ? [{ employee, timeOff: off }] : []), ...shifts[i].map((shift) => ({ employee, shift }))];
+  });
+  const shown = entries.length > MAX_ENTRIES ? entries.slice(0, MAX_ENTRIES - 1) : entries;
+  const more = entries.length - shown.length;
 
   return (
     <div
@@ -186,162 +203,120 @@ const MonthDay = memo(function MonthDay({
         <span className={styles.on}>{on} on</span>
       </button>
       {holiday && <span className={styles.holidayName}>{holiday.name}</span>}
-      {painting ? (
-        // While a brush is active, every person gets a slot so any day can be painted.
-        <div className={styles.slots}>
-          {employees.map((employee, i) => (
-            <MonthSlot
-              key={employee.id}
-              employee={employee}
-              date={date}
-              shifts={shifts[i]}
-              timeOff={timeOff[i]}
-              ctx={ctx}
-            />
-          ))}
-        </div>
-      ) : (
-        <ShiftList date={date} employees={employees} shifts={shifts} ctx={ctx} />
-      )}
+
+      {/* The body of the day is what a brush paints, for the selected people. */}
+      <div className={styles.dayBody} data-day-cell="" data-date={date}>
+        <AnimatePresence initial={false} mode="popLayout">
+          {shown.map((entry) =>
+            'shift' in entry ? (
+              <ShiftEntry key={entry.shift.id} employee={entry.employee} shift={entry.shift} ctx={ctx} />
+            ) : (
+              <TimeOffEntry
+                key={`off-${entry.employee.id}`}
+                employee={entry.employee}
+                timeOff={entry.timeOff}
+                date={date}
+                ctx={ctx}
+              />
+            ),
+          )}
+        </AnimatePresence>
+        {more > 0 && (
+          <button
+            type="button"
+            className={styles.more}
+            onClick={() => scheduleStore.getState().openDay(date)}
+          >
+            +{more} more
+          </button>
+        )}
+        <button
+          type="button"
+          className={styles.add}
+          onClick={(event) => handleMonthDayAdd(event, date)}
+          aria-label={
+            painting
+              ? `Paint ${formatDayLabel(date)} for the selected people`
+              : `Add a shift on ${formatDayLabel(date)}`
+          }
+        >
+          <Icon name="plus" size={14} />
+        </button>
+      </div>
     </div>
   );
 });
 
-/** Most entries a day lists before "+N more". */
-const MAX_ENTRIES = 6;
+const entryMotion = {
+  animate: { scale: 1, opacity: 1 },
+  exit: { opacity: 0, transition: { duration: 0.15 } },
+  transition: { type: 'spring', duration: 0.28, bounce: 0.4 },
+} as const;
 
-interface ShiftListProps {
-  date: ISODate;
-  employees: readonly Employee[];
-  shifts: readonly (readonly Shift[])[];
-  ctx: BlockContext;
+/** Opens the entry's shift or time off. While painting, the stroke handles the tap instead. */
+function openEntry(event: MouseEvent<HTMLButtonElement>) {
+  const state = scheduleStore.getState();
+  if (state.tool.kind !== 'select') return;
+  const { shiftId, timeOffId } = event.currentTarget.dataset;
+  if (shiftId) state.openSheet({ kind: 'shift', shiftId });
+  else if (timeOffId) state.openSheet({ kind: 'timeOff', timeOffId });
 }
 
-/** The day's shifts only: who works and when, in people order. */
-function ShiftList({ date, employees, shifts, ctx }: ShiftListProps) {
-  const entries = employees.flatMap((employee, i) => shifts[i].map((shift) => ({ employee, shift })));
-  const shown = entries.length > MAX_ENTRIES ? entries.slice(0, MAX_ENTRIES - 1) : entries;
-  const more = entries.length - shown.length;
-
+/** Who works and when: "Ana Ruiz 8a–4:30p" in the shift's color. */
+function ShiftEntry({ employee, shift, ctx }: { employee: Employee; shift: Shift; ctx: BlockContext }) {
+  const color = shiftColor(shift, ctx.templates);
+  const time = formatTimeRange(shift.start, shift.end, ctx.clock);
+  const name = shiftName(shift, ctx.templates);
   return (
-    <div className={styles.entries}>
-      <AnimatePresence initial={false} mode="popLayout">
-        {shown.map(({ employee, shift }) => {
-          const color = shiftColor(shift, ctx.templates);
-          const time = formatTimeRange(shift.start, shift.end, ctx.clock);
-          return (
-            <motion.button
-              key={shift.id}
-              type="button"
-              className={[styles.entry, !ctx.matcher.shift(shift) && styles.entryDimmed]
-                .filter(Boolean)
-                .join(' ')}
-              style={{ background: color, color: textOn(color) }}
-              data-cell=""
-              data-employee-id={employee.id}
-              data-date={date}
-              data-shift-id={shift.id}
-              onClick={handleCellClick}
-              aria-label={`${employee.name}, ${shiftName(shift, ctx.templates)}, ${time}, ${formatHours(hoursOf(shift))}`}
-              title={`${employee.name}: ${shiftName(shift, ctx.templates)}, ${time}`}
-              initial={isFreshShift(shift.id) ? { scale: 0.82, opacity: 0 } : false}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.15 } }}
-              transition={{ type: 'spring', duration: 0.28, bounce: 0.4 }}
-            >
-              <span className={styles.entryName}>
-                <span className={styles.fullName}>{employee.name}</span>
-                <span className={styles.shortName}>{initials(employee.name)}</span>
-              </span>
-              <span className={styles.entryTime}>{time}</span>
-            </motion.button>
-          );
-        })}
-      </AnimatePresence>
-      {more > 0 && (
-        <button type="button" className={styles.more} onClick={() => scheduleStore.getState().openDay(date)}>
-          +{more} more
-        </button>
-      )}
-    </div>
+    <motion.button
+      type="button"
+      className={[styles.entry, !ctx.matcher.shift(shift) && styles.entryDimmed].filter(Boolean).join(' ')}
+      style={{ background: color, color: textOn(color) }}
+      data-shift-id={shift.id}
+      onClick={openEntry}
+      aria-label={`${employee.name}, ${name}, ${time}, ${formatHours(hoursOf(shift))}`}
+      title={`${employee.name}: ${name}, ${time}`}
+      initial={isFreshShift(shift.id) ? { scale: 0.82, opacity: 0 } : false}
+      {...entryMotion}
+    >
+      <span className={styles.entryName}>
+        <span className={styles.fullName}>{employee.name}</span>
+        <span className={styles.shortName}>{initials(employee.name)}</span>
+      </span>
+      <span className={styles.entryDetail}>{time}</span>
+    </motion.button>
   );
 }
 
-interface MonthSlotProps {
+interface TimeOffEntryProps {
   employee: Employee;
+  timeOff: TimeOff;
   date: ISODate;
-  shifts: readonly Shift[];
-  timeOff: TimeOff | undefined;
   ctx: BlockContext;
 }
 
-/** One person on one day: filled when working, hatched when off, outlined otherwise. */
-const MonthSlot = memo(function MonthSlot({ employee, date, shifts, timeOff, ctx }: MonthSlotProps) {
-  const who = initials(employee.name);
-  const first = shifts[0];
-  const dimmed = first ? !shifts.some(ctx.matcher.shift) : timeOff ? !ctx.matcher.timeOff(timeOff) : false;
-  const name = first ? (shifts.length > 1 ? `${shifts.length} shifts` : shiftName(first, ctx.templates)) : '';
-  const label = first
-    ? `${employee.name}: ${shifts.map((s) => `${shiftName(s, ctx.templates)} ${formatTimeRange(s.start, s.end, ctx.clock)}`).join(', ')}`
-    : timeOff
-      ? `${employee.name}: ${TIME_OFF_LABELS[timeOff.type]}`
-      : `Add a shift for ${employee.name} on ${formatDayLabel(date)}`;
-
+/** Who is off and why: "Dev Patel Vacation", hatched in the time off color. */
+function TimeOffEntry({ employee, timeOff, date, ctx }: TimeOffEntryProps) {
+  const type = TIME_OFF_LABELS[timeOff.type];
   return (
-    <button
+    <motion.button
       type="button"
-      className={[styles.slot, dimmed && styles.dimmed, first && timeOff && styles.warning]
+      className={[styles.entry, styles.offEntry, !ctx.matcher.timeOff(timeOff) && styles.entryDimmed]
         .filter(Boolean)
         .join(' ')}
-      data-cell=""
-      data-employee-id={employee.id}
-      data-date={date}
-      data-shift-id={first?.id}
-      data-time-off-id={!first ? timeOff?.id : undefined}
-      onClick={handleCellClick}
-      aria-label={label}
-      title={label}
+      style={{ '--off': TIME_OFF_COLORS[timeOff.type] } as CSSProperties}
+      data-time-off-id={timeOff.id}
+      onClick={openEntry}
+      aria-label={`${employee.name}, ${type} time off`}
+      title={`${employee.name}: ${type}`}
+      initial={isFreshTimeOff(employee.id, date) ? { scale: 0.82, opacity: 0 } : false}
+      {...entryMotion}
     >
-      <AnimatePresence initial={false}>
-        {first ? (
-          <motion.span
-            key={shifts.map((s) => s.id).join()}
-            className={styles.fill}
-            initial={isFreshShift(first.id) ? { scale: 0.82, opacity: 0 } : false}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.15 } }}
-            transition={{ type: 'spring', duration: 0.28, bounce: 0.4 }}
-          >
-            {shifts.slice(0, 2).map((shift) => {
-              const color = shiftColor(shift, ctx.templates);
-              return <span key={shift.id} className={styles.part} style={{ background: color }} />;
-            })}
-            <span className={styles.text} style={{ color: textOn(shiftColor(first, ctx.templates)) }}>
-              <strong>{who}</strong>
-              <span className={styles.detail}>
-                {shifts.length > 1 ? name : formatTimeRange(first.start, first.end, ctx.clock)}
-              </span>
-            </span>
-          </motion.span>
-        ) : timeOff ? (
-          <motion.span
-            key={`off-${timeOff.type}`}
-            className={styles.off}
-            style={{ '--off': TIME_OFF_COLORS[timeOff.type] } as CSSProperties}
-            initial={isFreshTimeOff(employee.id, date) ? { scale: 0.82, opacity: 0 } : false}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.15 } }}
-            transition={{ type: 'spring', duration: 0.28, bounce: 0.4 }}
-          >
-            <strong>{who}</strong>
-            <span className={styles.detail}>{TIME_OFF_LABELS[timeOff.type]}</span>
-          </motion.span>
-        ) : (
-          <span key="empty" className={styles.empty}>
-            {who}
-          </span>
-        )}
-      </AnimatePresence>
-    </button>
+      <span className={styles.entryName}>
+        <span className={styles.fullName}>{employee.name}</span>
+        <span className={styles.shortName}>{initials(employee.name)}</span>
+      </span>
+      <span className={styles.entryDetail}>{type}</span>
+    </motion.button>
   );
-});
+}

@@ -22,6 +22,8 @@ interface Stroke {
   painted: Set<string>;
   ops: ChangeOp[];
   skipped: number;
+  /** A Month day was painted with nobody selected, so there was no one to paint for. */
+  needsSelection: boolean;
 }
 
 export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set, get) => {
@@ -51,7 +53,19 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
       get().persistOps(ops);
     }
     if (active.skipped > 0) get().showToast(skippedTimeOffMessage(active.skipped), { undo: ops.length > 0 });
+    else if (active.needsSelection && ops.length === 0) {
+      get().showToast('Select people above first, then paint their days. Tap a date to fill everyone shown.');
+    }
   };
+
+  const newStroke = (brush: Brush): Stroke => ({
+    brush,
+    visibleIds: selectVisibleIds(get()),
+    painted: new Set(),
+    ops: [],
+    skipped: 0,
+    needsSelection: false,
+  });
 
   return {
     tool: { kind: 'select' },
@@ -64,7 +78,7 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
 
     beginStroke(brush) {
       if (stroke) finish(stroke);
-      stroke = { brush, visibleIds: selectVisibleIds(get()), painted: new Set(), ops: [], skipped: 0 };
+      stroke = newStroke(brush);
     },
 
     strokeCell(employeeId, date) {
@@ -73,6 +87,19 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
       paint(
         stroke,
         targets.map((id) => ({ employeeId: id, date })),
+      );
+    },
+
+    strokeDay(date) {
+      if (!stroke) return;
+      const selected = stroke.visibleIds.filter((id) => get().selectedIds.has(id));
+      if (selected.length === 0) {
+        stroke.needsSelection = true;
+        return;
+      }
+      paint(
+        stroke,
+        selected.map((employeeId) => ({ employeeId, date })),
       );
     },
 
@@ -86,13 +113,7 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
     paintDate(date) {
       const tool = get().tool;
       if (tool.kind === 'select') return;
-      const active: Stroke = {
-        brush: tool,
-        visibleIds: selectVisibleIds(get()),
-        painted: new Set(),
-        ops: [],
-        skipped: 0,
-      };
+      const active = newStroke(tool);
       const targets = dateTargets(get().selectedIds, active.visibleIds);
       paint(
         active,

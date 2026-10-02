@@ -62,6 +62,8 @@ export interface ToolSlice {
   beginStroke(brush: Brush): void;
   /** Paints one (person, date) during a stroke, fanning out to selected people. */
   strokeCell(employeeId: ID, date: ISODate): void;
+  /** Paints a whole Month day for the selected people shown. Does nothing if nobody is selected. */
+  strokeDay(date: ISODate): void;
   endStroke(): void;
   /** Paints a whole date for the selection or everyone shown. */
   paintDate(date: ISODate): void;
@@ -90,6 +92,9 @@ export interface ApplyPreset {
   patternId?: ID;
   who?: 'one' | 'selected' | 'shown' | 'tag';
   employeeId?: ID;
+  /** Dates to apply over. A preset range also picks every weekday. */
+  from?: ISODate;
+  to?: ISODate;
 }
 
 /** Dialogs. They stack, so an editor opened from Manage returns to Manage. */

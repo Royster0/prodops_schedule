@@ -14,9 +14,12 @@ export function HintBar() {
   const templates = useScheduleStore((s) => s.data.templates);
   const clock = useScheduleStore((s) => s.data.settings.clock);
   const selected = useScheduleStore((s) => s.selectedIds.size);
+  const selectedName = useScheduleStore((s) =>
+    s.selectedIds.size === 1 ? s.data.employees[[...s.selectedIds][0]]?.name : undefined,
+  );
   const isMonth = useScheduleStore((s) => s.view === 'month');
   const touch = useMediaQuery(COARSE_POINTER);
-  const hint = describeTool(tool, templates, clock, selected);
+  const hint = describeTool(tool, templates, clock, { selected, selectedName, isMonth });
 
   return (
     <Reveal open={hint !== null}>
@@ -42,13 +45,36 @@ interface Hint {
   dot: CSSProperties;
 }
 
+interface Audience {
+  selected: number;
+  selectedName: string | undefined;
+  isMonth: boolean;
+}
+
+/**
+ * How to use the brush. `verb` is what tapping a day does ("fill", "clear",
+ * "mark"). In Month, days paint for the selected people only.
+ */
+function howTo(verb: string, { selected, selectedName, isMonth }: Audience): string {
+  const who =
+    selected === 0
+      ? 'everyone shown'
+      : selected === 1
+        ? (selectedName ?? '1 person')
+        : `the ${selected} selected`;
+  if (isMonth && selected === 0) {
+    return `Select people above, then tap or drag across days. Tap a date to ${verb} everyone shown.`;
+  }
+  if (isMonth) return `Tap or drag across days to ${verb} them for ${who}.`;
+  return `Tap or drag across days. Tap a date to ${verb} ${who}.`;
+}
+
 function describeTool(
   tool: Tool,
   templates: Readonly<Record<string, ShiftTemplate>>,
   clock: 12 | 24,
-  selected: number,
+  audience: Audience,
 ): Hint | null {
-  const everyone = selected > 1 ? `the ${selected} selected` : 'everyone shown';
   switch (tool.kind) {
     case 'select':
       return null;
@@ -57,21 +83,21 @@ function describeTool(
       if (!template) return null;
       return {
         title: `Painting ${template.name} (${formatTimeRange(template.start, template.end, clock)}).`,
-        body: `Tap or drag across days. Tap a date to fill ${everyone}.`,
+        body: howTo('fill', audience),
         dot: { background: template.color },
       };
     }
     case 'erase':
       return {
         title: 'Erasing.',
-        body: `Tap or drag across days to remove shifts, then time off. Tap a date to clear ${everyone}.`,
+        body: `Shifts go first, then time off. ${howTo('clear', audience)}`,
         dot: { background: 'var(--surface)', boxShadow: 'inset 0 0 0 2px var(--ink-2)' },
       };
     case 'timeOff': {
       const color = TIME_OFF_COLORS[tool.type];
       return {
         title: `Painting ${TIME_OFF_LABELS[tool.type]}.`,
-        body: `Tap or drag across days to mark time off. Tap a date to mark ${everyone}.`,
+        body: howTo('mark', audience),
         dot: {
           background: `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`,
           boxShadow: `inset 0 0 0 1.5px ${color}`,

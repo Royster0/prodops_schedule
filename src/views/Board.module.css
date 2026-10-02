@@ -17,11 +17,11 @@
   -webkit-user-select: none;
 }
 
-.painting :global([data-cell]) {
+.painting :global(:is([data-cell], [data-day-cell])) {
   touch-action: none;
   cursor: crosshair;
 }
 
-.painting :global([data-cell]) button {
+.painting :global(:is([data-cell], [data-day-cell])) button {
   cursor: crosshair;
 }
