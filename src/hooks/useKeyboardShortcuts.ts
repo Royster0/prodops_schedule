@@ -12,20 +12,22 @@ function isTyping(target: EventTarget | null): boolean {
 
 /**
  * Board shortcuts: arrows move the period, T today, D/W/M views, V/E/1–9 tools,
- * Escape back to Select, Ctrl or Cmd+Z undo. Ignored while typing or in a dialog.
+ * Escape back to Select, Ctrl or Cmd+Z undo. Ignored while typing; only undo works in a dialog.
  */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const state = scheduleStore.getState();
-      if (event.defaultPrevented || state.sheets.length > 0 || isTyping(event.target)) return;
+      if (event.defaultPrevented || isTyping(event.target)) return;
       const key = event.key.toLowerCase();
 
+      // Undo also works with a sheet open, e.g. right after removing something in Manage.
       if ((event.ctrlKey || event.metaKey) && key === 'z' && !event.shiftKey) {
         event.preventDefault();
         state.undo();
         return;
       }
+      if (state.sheets.length > 0) return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if ((event.target as HTMLElement | null)?.closest('[role="menu"], [role="radiogroup"]')) return;
 

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion, type MotionProps } from 'motion/react';
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { PHONE_SHEET, useMediaQuery } from '../hooks/useMediaQuery';
 import { Button } from './Button';
@@ -45,27 +45,49 @@ export function SheetFrame({ open, onClose, contentKey, children }: SheetFramePr
     (first ?? panel)?.focus({ preventScroll: true });
   }, [open, contentKey, phone]);
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onClose();
-      return;
-    }
-    if (event.key !== 'Tab' || !panelRef.current) return;
-    const items = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-      (el) => el.offsetParent !== null,
-    );
-    if (items.length === 0) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
+  // Escape and the focus trap listen on the document, not the panel, so they
+  // still work after the focused control is removed (e.g. deleting a list row).
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const panel = panelRef.current;
+      if (!panel || event.defaultPrevented) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (el) => el.offsetParent !== null,
+      );
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const inside = panel.contains(document.activeElement);
+      if (!inside || (event.shiftKey && document.activeElement === first)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
+
+  // When the focused control disappears, keep focus in the dialog instead of
+  // letting it fall back to the page behind it.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!open || !panel) return;
+    const observer = new MutationObserver(() => {
+      if (document.activeElement === document.body && panel.isConnected) panel.focus({ preventScroll: true });
+    });
+    observer.observe(panel, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [open]);
 
   return createPortal(
     <AnimatePresence>
@@ -86,7 +108,6 @@ export function SheetFrame({ open, onClose, contentKey, children }: SheetFramePr
             aria-labelledby={TITLE_ID}
             tabIndex={-1}
             className={[styles.panel, phone && styles.bottom].filter(Boolean).join(' ')}
-            onKeyDown={onKeyDown}
             {...panelMotion(phone, Boolean(reduceMotion))}
           >
             {children}
