@@ -1,0 +1,27 @@
+.board {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.content {
+  min-width: min-content;
+  min-height: 100%;
+}
+
+/* While a brush is active, cells take touch drags for painting. Headers still scroll. */
+.painting {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.painting :global(:is([data-cell], [data-day-cell])) {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.painting :global(:is([data-cell], [data-day-cell])) button {
+  cursor: crosshair;
+}

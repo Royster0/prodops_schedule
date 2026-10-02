@@ -1,0 +1,123 @@
+.block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px 8px;
+  border-radius: var(--radius-block);
+  text-align: left;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  transform-origin: 50% 60%;
+}
+
+.block:hover {
+  filter: brightness(1.06) saturate(1.05);
+}
+
+.compact {
+  padding: 4px 6px 6px;
+}
+
+.dimmed {
+  filter: saturate(0.15);
+}
+
+.dimmed:hover {
+  filter: saturate(0.35);
+}
+
+.warning {
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.compact .name {
+  font-size: 12px;
+}
+
+.marks {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+}
+
+.tagDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1.5px currentColor;
+}
+
+.noteDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 500;
+  opacity: 0.92;
+}
+
+.compact .time {
+  font-size: 10.5px;
+  letter-spacing: -0.01em;
+}
+
+.track {
+  position: relative;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+@media (max-width: 760px) {
+  .block {
+    padding: 5px 6px 7px;
+  }
+
+  .name {
+    font-size: 12px;
+  }
+
+  .time {
+    font-size: 10.5px;
+  }
+}

@@ -1,0 +1,60 @@
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.item:hover:not(:disabled),
+.item:focus-visible {
+  background: var(--hover);
+}
+
+.item:focus-visible {
+  outline-offset: -2px;
+}
+
+.item:disabled {
+  color: var(--muted);
+}
+
+.item svg {
+  flex: none;
+  color: var(--ink-2);
+}
+
+.danger,
+.danger svg {
+  color: var(--danger);
+}
+
+.iconSpace {
+  width: 17px;
+  flex: none;
+}
+
+.label {
+  flex: 1;
+}
+
+.check {
+  margin-left: auto;
+}
+
+.divider {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line-2);
+}

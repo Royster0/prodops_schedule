@@ -1,0 +1,50 @@
+.wrap {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 32px 16px;
+}
+
+.card {
+  width: min(440px, 100%);
+}
+
+.art {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 14px;
+  gap: 6px;
+  width: 168px;
+  margin-bottom: 22px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+
+.bar {
+  border-radius: 5px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.text {
+  margin: 6px 0 16px;
+  color: var(--ink-2);
+  font-size: 14.5px;
+}
+
+.names {
+  font-size: 15px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}

@@ -1,0 +1,133 @@
+.inset {
+  margin: -4px 0 16px;
+  padding: 14px 14px 0;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.muted {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.quickChips {
+  margin: -8px 0 16px;
+}
+
+/* Pattern preview */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: -4px 0 16px;
+}
+
+.previewWeek {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.previewDays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.previewDay {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+}
+
+.previewWeekday {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  text-align: center;
+}
+
+.previewBar,
+.previewOff {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.previewOff {
+  color: var(--muted);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--line);
+  background: var(--surface-2);
+}
+
+.lead {
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.personHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.personHead > :first-child {
+  margin-top: 26px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.templatePreview {
+  width: 180px;
+  margin: 0 auto 18px;
+  pointer-events: none;
+}
+
+/* Pattern editor */
+
+.patternGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.patternDay {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.patternBar {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.patternLabel {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+  text-align: center;
+}
+
+.patternDay select {
+  padding: 4px 2px;
+  font-size: 12.5px;
+  text-align: center;
+}

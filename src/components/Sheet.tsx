@@ -1,0 +1,178 @@
+import { AnimatePresence, motion, useReducedMotion, type MotionProps } from 'motion/react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { PHONE_SHEET, useMediaQuery } from '../hooks/useMediaQuery';
+import { Button } from './Button';
+import styles from './Sheet.module.css';
+
+const TITLE_ID = 'sheet-title';
+const FOCUSABLE =
+  'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+interface SheetFrameProps {
+  open: boolean;
+  onClose(): void;
+  /** Changes when a different sheet is shown in the same frame, to move focus into it. */
+  contentKey: string;
+  children: ReactNode;
+}
+
+/**
+ * The dialog shell: a backdrop plus a centered panel, or a bottom sheet on phones.
+ * Traps focus, closes on Escape and backdrop click, and returns focus on close.
+ */
+export function SheetFrame({ open, onClose, contentKey, children }: SheetFrameProps) {
+  const phone = useMediaQuery(PHONE_SHEET);
+  const reduceMotion = useReducedMotion();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusTo = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    returnFocusTo.current = document.activeElement as HTMLElement | null;
+    return () => {
+      const target = returnFocusTo.current;
+      if (target?.isConnected) target.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  // Focus the first field of each sheet shown. On phones focus the panel
+  // instead, so the keyboard doesn't pop up over the sheet.
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    const first = phone ? null : panel?.querySelector<HTMLElement>(`.${styles.body} :is(${FOCUSABLE})`);
+    (first ?? panel)?.focus({ preventScroll: true });
+  }, [open, contentKey, phone]);
+
+  // Escape and the focus trap listen on the document, not the panel, so they
+  // still work after the focused control is removed (e.g. deleting a list row).
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const panel = panelRef.current;
+      if (!panel || event.defaultPrevented) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (el) => el.offsetParent !== null,
+      );
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const inside = panel.contains(document.activeElement);
+      if (!inside || (event.shiftKey && document.activeElement === first)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
+
+  // When the focused control disappears, keep focus in the dialog instead of
+  // letting it fall back to the page behind it.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!open || !panel) return;
+    const observer = new MutationObserver(() => {
+      if (document.activeElement === document.body && panel.isConnected) panel.focus({ preventScroll: true });
+    });
+    observer.observe(panel, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [open]);
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <div className={styles.layer} key="sheet">
+          <motion.div
+            className={styles.backdrop}
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          />
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={TITLE_ID}
+            tabIndex={-1}
+            className={[styles.panel, phone && styles.bottom].filter(Boolean).join(' ')}
+            {...panelMotion(phone, Boolean(reduceMotion))}
+          >
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}
+
+/** Desktop fades and scales from 0.96, phones slide up. Reduced motion gets a plain fade. */
+function panelMotion(phone: boolean, reduceMotion: boolean): MotionProps {
+  if (reduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.15 },
+    };
+  }
+  if (phone) {
+    return {
+      initial: { y: '100%' },
+      animate: { y: 0 },
+      exit: { y: '100%' },
+      transition: { type: 'spring', bounce: 0, duration: 0.32 },
+    };
+  }
+  return {
+    initial: { opacity: 0, scale: 0.96 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.96 },
+    transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+  };
+}
+
+interface SheetProps {
+  title: string;
+  onClose(): void;
+  children: ReactNode;
+  footer?: ReactNode;
+  /** Shown before the title, e.g. a back button in stacked sheets. */
+  back?: { label: string; onBack(): void };
+}
+
+/** Title, close button, scrollable body and footer actions. */
+export function Sheet({ title, onClose, children, footer, back }: SheetProps) {
+  return (
+    <>
+      <div className={styles.header}>
+        {back && (
+          <Button icon="chevronLeft" iconOnly variant="ghost" size="sm" onClick={back.onBack}>
+            {back.label}
+          </Button>
+        )}
+        <h2 id={TITLE_ID} className={styles.title}>
+          {title}
+        </h2>
+        <Button icon="close" iconOnly variant="ghost" size="sm" onClick={onClose}>
+          Close
+        </Button>
+      </div>
+      <div className={styles.body}>{children}</div>
+      {footer && <div className={styles.footer}>{footer}</div>}
+    </>
+  );
+}

@@ -1,0 +1,40 @@
+.strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  height: 14px;
+}
+
+.bar,
+.empty {
+  flex: 1;
+  min-width: 1px;
+  border-radius: 1px 1px 0 0;
+}
+
+.bar {
+  background: var(--ink-2);
+  opacity: 0.75;
+}
+
+.empty {
+  height: 1px;
+  background: var(--line);
+}
+
+.total {
+  flex: none;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--muted);
+  line-height: 1;
+}
