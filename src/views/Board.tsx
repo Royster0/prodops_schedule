@@ -4,6 +4,8 @@ import { usePaintStroke } from '../hooks/usePaintStroke';
 import { selectPeriod } from '../store/derived';
 import { useScheduleStore } from '../store/useScheduleStore';
 import styles from './Board.module.css';
+import { DayView } from './DayView';
+import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
 
 /** The scrolling board. Shows the active view and handles paint strokes. */
@@ -27,7 +29,9 @@ export function Board() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.14 }}
       >
+        {view === 'day' && <DayView />}
         {(view === 'week' || view === 'twoWeeks') && <WeekView compact={view === 'twoWeeks'} />}
+        {view === 'month' && <MonthView />}
       </motion.div>
     </div>
   );

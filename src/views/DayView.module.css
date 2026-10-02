@@ -1,0 +1,155 @@
+.grid {
+  display: grid;
+  grid-template-columns: var(--name-col) minmax(520px, 1fr);
+  grid-auto-rows: minmax(64px, auto);
+  min-width: min-content;
+  align-content: start;
+}
+
+.timelineHeader {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 8px 0 6px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--line-2);
+}
+
+.holiday {
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--holiday-ink);
+}
+
+.histogram,
+.ticks {
+  display: grid;
+  grid-template-columns: repeat(var(--hours), minmax(0, 1fr));
+}
+
+.histogram {
+  height: 52px;
+  align-items: end;
+}
+
+.histogramColumn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  padding: 0 1px;
+}
+
+.histogramBar {
+  width: 100%;
+  min-height: 1px;
+  border-radius: 3px 3px 0 0;
+  background: color-mix(in srgb, var(--ink-2) 70%, transparent);
+}
+
+.histogramCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+.ticks {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tick {
+  padding-left: 3px;
+  border-left: 1px solid var(--line);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.rowHeader {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-2);
+}
+
+.lane {
+  position: relative;
+  min-height: max(64px, calc(var(--lanes) * 30px + 8px));
+  border-left: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line-2);
+  background-image: linear-gradient(to right, var(--line-2) 1px, transparent 1px);
+  background-size: calc(100% / var(--hours)) 100%;
+}
+
+.laneButton {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  cursor: copy;
+}
+
+.laneButton:hover {
+  background: var(--hover);
+}
+
+.laneButton:focus-visible {
+  outline-offset: -2px;
+}
+
+.timeOff {
+  position: absolute;
+  inset: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: var(--radius-block);
+  color: color-mix(in srgb, var(--off) 72%, var(--ink));
+  font-size: 12.5px;
+  font-weight: 750;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--off) 30%, transparent) 0 2px,
+      transparent 2px 7px
+    ),
+    color-mix(in srgb, var(--off) 9%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--off) 70%, transparent);
+}
+
+.now {
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  z-index: 2;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--danger);
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: var(--name-col) minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .ticks {
+    font-size: 10px;
+  }
+
+  .histogramCount {
+    font-size: 10px;
+  }
+}
