@@ -188,6 +188,11 @@
     linear-gradient(0deg, var(--muted) 50%, transparent 50%) right / 1.5px 8px repeat-y;
 }
 
+/* With a brush active, tapping an empty cell paints it, so don't hint at "add". */
+:global([data-painting]) .add:hover {
+  opacity: 0;
+}
+
 .noMatches {
   grid-column: 1 / -1;
   display: flex;

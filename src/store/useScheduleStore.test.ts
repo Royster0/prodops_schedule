@@ -54,3 +54,33 @@ describe('schedule store', () => {
     expect(store.getState().undoStack).toHaveLength(0);
   });
 });
+
+describe('stale references', () => {
+  it('drops deleted people, tags and templates from selection, filters and the brush', async () => {
+    const { tag, template } = await import('../testing/fixtures');
+    const store = createScheduleStore({
+      repository: memoryRepository(
+        makeData({
+          employees: [employee('ana'), employee('ben')],
+          tags: [tag('lead')],
+          templates: [template('L10')],
+        }),
+      ).repository,
+    });
+    await store.getState().init();
+    store.getState().setSelected(['ana', 'ben']);
+    store.getState().setFilters({ people: ['ana'], tags: ['lead'], kinds: ['L10', 'off'] });
+    store.getState().setTool({ kind: 'template', templateId: 'L10' });
+
+    store.getState().commit('delete', (changes) => {
+      changes.remove('employees', 'ana');
+      changes.remove('tags', 'lead');
+      changes.remove('templates', 'L10');
+    });
+
+    const s = store.getState();
+    expect([...s.selectedIds]).toEqual(['ben']);
+    expect(s.filters).toMatchObject({ people: [], tags: [], kinds: ['off'] });
+    expect(s.tool).toEqual({ kind: 'select' });
+  });
+});

@@ -4,6 +4,7 @@ import { createStarterData } from '../../domain/seed';
 import { pushUndo } from '../../domain/undo';
 import type { ScheduleRepository } from '../../data/repository';
 import { markCreated } from '../freshness';
+import { pruneMissing } from '../prune';
 import type { DataSlice, StoreState } from '../types';
 
 export interface StoreDeps {
@@ -24,7 +25,11 @@ export function createDataSlice({ repository }: StoreDeps): StateCreator<StoreSt
       const data = await repository.load();
       set({ data, status: 'ready' });
       // A server-backed repository pushes changes made elsewhere.
-      repository.subscribe?.((next) => set({ data: next }));
+      repository.subscribe?.((next) => {
+        set({ data: next });
+        const stale = pruneMissing(get());
+        if (stale) set(stale);
+      });
     },
 
     commit(label, change, options) {
@@ -34,6 +39,8 @@ export function createDataSlice({ repository }: StoreDeps): StateCreator<StoreSt
       if (ops.length > 0) {
         markCreated(ops);
         set({ data: changes.data, undoStack: pushUndo(get().undoStack, { label, ops }) });
+        const stale = pruneMissing(get());
+        if (stale) set(stale);
         get().persistOps(ops);
       }
       const toast = typeof options?.toast === 'function' ? options.toast(result) : options?.toast;

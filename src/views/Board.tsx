@@ -23,6 +23,7 @@ export function Board() {
       ref={boardRef}
       className={[styles.board, painting && styles.painting].filter(Boolean).join(' ')}
       data-view={view}
+      data-painting={painting || undefined}
     >
       <motion.div
         key={hasPeople ? `${view}:${periodStart}` : 'empty'}

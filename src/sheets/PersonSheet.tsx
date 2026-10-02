@@ -45,8 +45,6 @@ export function PersonSheet({ employeeId, onClose }: { employeeId?: ID; onClose(
     scheduleStore.getState().commit('delete person', (changes) => deleteEmployee(changes, existing.id), {
       toast: `Deleted ${existing.name} and their shifts.`,
     });
-    const { selectedIds, setSelected } = scheduleStore.getState();
-    if (selectedIds.has(existing.id)) setSelected([...selectedIds].filter((id) => id !== existing.id));
     onClose();
   };
 
