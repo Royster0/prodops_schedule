@@ -109,8 +109,16 @@ export function shiftInterval(shift: Pick<Shift, 'start' | 'end'>): [number, num
 }
 
 /** Sorts shifts in a cell by start time, then by name for stability. */
+/** Earlier start first; for the same start, the one that ends sooner (overnight ends count as next day). */
+export function compareTimes(a: Pick<Shift, 'start' | 'end'>, b: Pick<Shift, 'start' | 'end'>): number {
+  const [aStart, aEnd] = shiftInterval(a);
+  const [bStart, bEnd] = shiftInterval(b);
+  return aStart - bStart || aEnd - bEnd;
+}
+
+/** compareTimes, then id, so the order is the same on every render. */
 export function byStartTime(a: Shift, b: Shift): number {
-  return a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || a.id.localeCompare(b.id);
+  return compareTimes(a, b) || a.id.localeCompare(b.id);
 }
 
 export function sortByOrder<T extends { order: number; name?: string }>(items: readonly T[]): T[] {
