@@ -8,6 +8,7 @@ import { Toast } from './components/Toast';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useScheduleStore } from './store/useScheduleStore';
+import { SheetHost } from './sheets/SheetHost';
 import { Board } from './views/Board';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
           <Dock />
         </footer>
       </div>
+      <SheetHost />
     </MotionConfig>
   );
 }
