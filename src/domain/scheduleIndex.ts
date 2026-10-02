@@ -33,7 +33,8 @@ export function buildShiftCells(shifts: Readonly<Record<ID, Shift>>, previous?: 
 export function buildTimeOffCells(timeOff: Readonly<Record<ID, TimeOff>>): TimeOffCells {
   const cells = new Map<string, TimeOff>();
   for (const record of Object.values(timeOff)) {
-    for (const date of dateRange(record.start, record.end)) cells.set(cellKey(record.employeeId, date), record);
+    for (const date of dateRange(record.start, record.end))
+      cells.set(cellKey(record.employeeId, date), record);
   }
   return cells;
 }

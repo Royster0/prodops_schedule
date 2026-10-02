@@ -25,6 +25,12 @@ describe('migrate', () => {
   it('fills missing collections and repairs settings', () => {
     const data = migrate({ version: 1, data: { settings: { title: '', dayStart: 30 } } });
     expect(data.shifts).toEqual({});
-    expect(data.settings).toEqual({ title: 'Team schedule', weekStart: 1, clock: 12, dayStart: 5, dayEnd: 23 });
+    expect(data.settings).toEqual({
+      title: 'Team schedule',
+      weekStart: 1,
+      clock: 12,
+      dayStart: 5,
+      dayEnd: 23,
+    });
   });
 });

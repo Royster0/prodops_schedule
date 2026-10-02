@@ -124,4 +124,10 @@ export interface UiSlice {
   setTheme(theme: ThemePreference): void;
 }
 
-export type StoreState = DataSlice & UndoSlice & ViewSlice & ToolSlice & SelectionSlice & FiltersSlice & UiSlice;
+export type StoreState = DataSlice &
+  UndoSlice &
+  ViewSlice &
+  ToolSlice &
+  SelectionSlice &
+  FiltersSlice &
+  UiSlice;

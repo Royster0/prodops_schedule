@@ -1,0 +1,43 @@
+.block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px 8px;
+  border-radius: var(--radius-block);
+  text-align: left;
+  /* Mixing with ink keeps the label readable in both themes. */
+  color: color-mix(in srgb, var(--off) 72%, var(--ink));
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--off) 30%, transparent) 0 2px,
+      transparent 2px 7px
+    ),
+    color-mix(in srgb, var(--off) 9%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--off) 70%, transparent);
+}
+
+.compact {
+  min-height: 38px;
+  padding: 4px 6px;
+}
+
+.dimmed {
+  filter: saturate(0.15);
+}
+
+.label {
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+.note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--ink-2);
+}

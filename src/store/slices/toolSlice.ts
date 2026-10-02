@@ -70,7 +70,10 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
     strokeCell(employeeId, date) {
       if (!stroke) return;
       const targets = paintTargets(employeeId, get().selectedIds, stroke.visibleIds);
-      paint(stroke, targets.map((id) => ({ employeeId: id, date })));
+      paint(
+        stroke,
+        targets.map((id) => ({ employeeId: id, date })),
+      );
     },
 
     endStroke() {
@@ -91,7 +94,10 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
         skipped: 0,
       };
       const targets = dateTargets(get().selectedIds, active.visibleIds);
-      paint(active, targets.map((employeeId) => ({ employeeId, date })));
+      paint(
+        active,
+        targets.map((employeeId) => ({ employeeId, date })),
+      );
       finish(active);
     },
   };

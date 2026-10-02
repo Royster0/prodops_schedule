@@ -4,12 +4,7 @@ import { isISODate } from '../domain/dates';
 import { DEFAULT_SETTINGS } from '../domain/seed';
 import { isHHMM } from '../domain/time';
 import { TIME_OFF_TYPES } from '../domain/color';
-import {
-  COLLECTION_NAMES,
-  type CollectionName,
-  type ScheduleData,
-  type Settings,
-} from '../domain/types';
+import { COLLECTION_NAMES, type CollectionName, type ScheduleData, type Settings } from '../domain/types';
 
 /** Versioned storage format, validation and migrations. */
 

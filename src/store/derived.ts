@@ -48,11 +48,15 @@ const shiftCellsOf = memoize((shifts: StoreState['data']['shifts']) => {
 });
 
 const timeOffCellsOf = memoize(buildTimeOffCells);
-const employeesOf = memoize((employees: StoreState['data']['employees']) => sortByOrder(Object.values(employees)));
+const employeesOf = memoize((employees: StoreState['data']['employees']) =>
+  sortByOrder(Object.values(employees)),
+);
 const templatesOf = memoize((templates: StoreState['data']['templates']) =>
   sortByOrder<ShiftTemplate>(Object.values(templates)),
 );
-const patternsOf = memoize((patterns: StoreState['data']['patterns']) => sortByOrder(Object.values(patterns)));
+const patternsOf = memoize((patterns: StoreState['data']['patterns']) =>
+  sortByOrder(Object.values(patterns)),
+);
 const tagsOf = memoize((tags: StoreState['data']['tags']) =>
   Object.values(tags).sort((a, b) => a.name.localeCompare(b.name)),
 );
@@ -67,7 +71,14 @@ const matcherOf = memoize(createMatcher);
 
 const keepVisible = reuseIfSame<Employee>();
 const visibleOf = memoize(
-  (employees: Employee[], filters: Filters, matcher: Matcher, period: Period, shifts: ShiftCells, off: TimeOffCells) =>
+  (
+    employees: Employee[],
+    filters: Filters,
+    matcher: Matcher,
+    period: Period,
+    shifts: ShiftCells,
+    off: TimeOffCells,
+  ) =>
     keepVisible(
       visibleEmployees({
         employees,

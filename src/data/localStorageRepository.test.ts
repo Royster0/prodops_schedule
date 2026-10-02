@@ -49,7 +49,10 @@ describe('LocalStorageRepository', () => {
   it('loads what it saved, including settings', async () => {
     const seeded = createStarterData();
     const storage = memoryStorage({
-      [STORAGE_KEY]: JSON.stringify({ version: 1, data: { ...seeded, settings: { ...seeded.settings, clock: 24 } } }),
+      [STORAGE_KEY]: JSON.stringify({
+        version: 1,
+        data: { ...seeded, settings: { ...seeded.settings, clock: 24 } },
+      }),
     });
     const data = await new LocalStorageRepository({ storage }).load();
     expect(data.settings.clock).toBe(24);

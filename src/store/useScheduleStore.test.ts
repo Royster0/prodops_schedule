@@ -26,7 +26,9 @@ describe('schedule store', () => {
     const store = createScheduleStore({ repository: memory.repository });
     await store.getState().init();
 
-    store.getState().commit('apply shifts', (changes) => changes.put('shifts', shift('s1', 'ana', '2026-10-01')));
+    store
+      .getState()
+      .commit('apply shifts', (changes) => changes.put('shifts', shift('s1', 'ana', '2026-10-01')));
     store.getState().undo();
 
     expect(store.getState().data.shifts).toEqual({});

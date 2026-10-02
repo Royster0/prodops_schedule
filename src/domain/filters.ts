@@ -7,9 +7,7 @@ export const EMPTY_FILTERS: Filters = { search: '', people: [], tags: [], kinds:
 
 /** Number shown on the Filter button. "Hide people with no matches" is a mode, not a filter. */
 export function activeFilterCount(filters: Filters): number {
-  return (
-    (filters.search.trim() ? 1 : 0) + filters.people.length + filters.tags.length + filters.kinds.length
-  );
+  return (filters.search.trim() ? 1 : 0) + filters.people.length + filters.tags.length + filters.kinds.length;
 }
 
 export interface Matcher {
@@ -35,8 +33,8 @@ export function createMatcher(
     matchesAll: kinds.size === 0 && tags.size === 0,
     shift(shift) {
       if (kinds.size > 0 && !kinds.has(shiftKind(shift, templates))) return false;
-      if (tags.size > 0 && !hasTags(shiftTags(shift, templates)) && !personTags(shift.employeeId)) return false;
-      return true;
+      if (tags.size === 0) return true;
+      return hasTags(shiftTags(shift, templates)) || personTags(shift.employeeId);
     },
     timeOff(timeOff) {
       if (kinds.size > 0 && !kinds.has('off')) return false;

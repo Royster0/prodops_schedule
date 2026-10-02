@@ -46,3 +46,8 @@ export const scheduleStore = createScheduleStore({
 export function useScheduleStore<T>(selector: (state: StoreState) => T): T {
   return useStore(scheduleStore, selector);
 }
+
+// Handy for debugging and browser checks during development.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as { scheduleStore: ScheduleStore }).scheduleStore = scheduleStore;
+}

@@ -51,7 +51,13 @@ export function shift(id: ID, employeeId: ID, date: string, overrides: Partial<S
   };
 }
 
-export function timeOff(id: ID, employeeId: ID, start: string, end: string, overrides: Partial<TimeOff> = {}): TimeOff {
+export function timeOff(
+  id: ID,
+  employeeId: ID,
+  start: string,
+  end: string,
+  overrides: Partial<TimeOff> = {},
+): TimeOff {
   return { id, employeeId, start, end, type: 'vacation', note: '', ...overrides };
 }
 

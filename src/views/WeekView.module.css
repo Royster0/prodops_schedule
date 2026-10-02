@@ -1,0 +1,230 @@
+.grid {
+  --day-min: 118px;
+  display: grid;
+  grid-template-columns: var(--name-col) repeat(var(--days), minmax(var(--day-min), 1fr));
+  grid-auto-rows: minmax(68px, auto);
+  min-width: min-content;
+  align-content: start;
+}
+
+.compact {
+  --day-min: 80px;
+  grid-auto-rows: minmax(58px, auto);
+}
+
+/* Sticky corner, day headers and row headers. */
+
+.corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.peopleCount {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.selectAll {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--focus);
+  border-radius: 4px;
+}
+
+.selectAll:hover {
+  text-decoration: underline;
+}
+
+.dayHeader {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  min-width: 0;
+  padding: 8px 10px 8px;
+  border-top: 3px solid transparent;
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--line-2);
+  background: var(--surface);
+  text-align: left;
+  touch-action: auto;
+}
+
+.dayHeader:hover {
+  background-image: linear-gradient(var(--hover), var(--hover));
+}
+
+.dayHeader:focus-visible {
+  outline-offset: -2px;
+}
+
+.dayHeader.weekend {
+  background-color: var(--surface-2);
+}
+
+.dayHeader.holiday {
+  background-color: var(--holiday);
+}
+
+.dayHeader.today {
+  border-top-color: var(--today);
+  background-color: color-mix(in srgb, var(--today) 7%, var(--surface));
+}
+
+.weekday {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.month {
+  color: var(--ink-2);
+}
+
+.dateNumber {
+  align-self: flex-start;
+  min-width: 30px;
+  margin: 0 -6px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.today .dateNumber {
+  background: var(--today);
+  color: var(--today-ink);
+  text-align: center;
+}
+
+.holidayName {
+  min-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--holiday-ink);
+}
+
+.rowHeader {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-2);
+  touch-action: auto;
+}
+
+/* Cells */
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px;
+  border-left: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line-2);
+}
+
+.cellWeekend {
+  background: var(--surface-2);
+}
+
+.cellHoliday {
+  background: color-mix(in srgb, var(--holiday) 60%, var(--surface));
+}
+
+.cellToday {
+  background: var(--today-tint);
+}
+
+.add {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  border-radius: var(--radius-block);
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.add:hover,
+.add:focus-visible {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  background-image: none;
+  outline-offset: -2px;
+}
+
+.add:hover {
+  box-shadow: none;
+  background:
+    linear-gradient(90deg, var(--muted) 50%, transparent 50%) top / 8px 1.5px repeat-x,
+    linear-gradient(90deg, var(--muted) 50%, transparent 50%) bottom / 8px 1.5px repeat-x,
+    linear-gradient(0deg, var(--muted) 50%, transparent 50%) left / 1.5px 8px repeat-y,
+    linear-gradient(0deg, var(--muted) 50%, transparent 50%) right / 1.5px 8px repeat-y;
+}
+
+.noMatches {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.noMatches button {
+  color: var(--focus);
+  font-weight: 650;
+}
+
+.noMatches button:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    --day-min: 96px;
+  }
+
+  .compact {
+    --day-min: 74px;
+  }
+
+  .corner {
+    padding: 8px;
+  }
+
+  .dayHeader {
+    padding: 6px 7px;
+  }
+
+  .dateNumber {
+    font-size: 19px;
+  }
+}

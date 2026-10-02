@@ -15,7 +15,8 @@ export function createUiSlice(initialTheme: ThemePreference): StateCreator<Store
     closeSheet: () => set({ sheets: get().sheets.slice(0, -1) }),
     closeAllSheets: () => set({ sheets: [] }),
 
-    showToast: (message, options) => set({ toast: { id: ++toastCounter, message, undo: options?.undo ?? false } }),
+    showToast: (message, options) =>
+      set({ toast: { id: ++toastCounter, message, undo: options?.undo ?? false } }),
     dismissToast: () => set({ toast: null }),
 
     setTheme: (theme) => set({ theme }),

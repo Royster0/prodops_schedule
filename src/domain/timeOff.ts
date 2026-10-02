@@ -72,7 +72,12 @@ export interface TimeOffInput {
  * Adds a range from a form. Overlapping ranges for the person are trimmed and,
  * when asked, their shifts in the range are removed. Returns the shifts removed.
  */
-export function addRange(changes: ChangeSet, input: TimeOffInput, removeShifts: boolean, id: ID = createId()): number {
+export function addRange(
+  changes: ChangeSet,
+  input: TimeOffInput,
+  removeShifts: boolean,
+  id: ID = createId(),
+): number {
   clearTimeOff(changes, input.employeeId, input.start, input.end);
   changes.put('timeOff', { id, ...input });
   return removeShifts ? removeShiftsInRange(changes, input.employeeId, input.start, input.end) : 0;
