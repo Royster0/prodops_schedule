@@ -41,7 +41,11 @@ export function copyFromEarlier(
 }
 
 /** Removes every shift on `dates` for these people. Returns how many. */
-export function clearShifts(changes: ChangeSet, employeeIds: readonly ID[], dates: readonly ISODate[]): number {
+export function clearShifts(
+  changes: ChangeSet,
+  employeeIds: readonly ID[],
+  dates: readonly ISODate[],
+): number {
   let removed = 0;
   for (const employeeId of employeeIds) {
     for (const date of dates) {

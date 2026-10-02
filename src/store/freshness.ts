@@ -14,7 +14,8 @@ const createdAt = new Map<string, number>();
 
 function timeOffCells(record: TimeOff | null): Set<string> {
   const cells = new Set<string>();
-  if (record) for (const date of dateRange(record.start, record.end)) cells.add(cellKey(record.employeeId, date));
+  if (record)
+    for (const date of dateRange(record.start, record.end)) cells.add(cellKey(record.employeeId, date));
   return cells;
 }
 

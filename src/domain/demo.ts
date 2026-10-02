@@ -91,7 +91,8 @@ export function removeDemoTeam(changes: ChangeSet): number {
   const demo = changes.list('employees').filter((e) => e.demo);
   for (const employee of demo) {
     changes.remove('employees', employee.id);
-    for (const shift of changes.list('shifts')) if (shift.employeeId === employee.id) changes.remove('shifts', shift.id);
+    for (const shift of changes.list('shifts'))
+      if (shift.employeeId === employee.id) changes.remove('shifts', shift.id);
     for (const off of changes.timeOffFor(employee.id)) changes.remove('timeOff', off.id);
   }
   return demo.length;

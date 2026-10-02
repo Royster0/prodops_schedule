@@ -12,16 +12,28 @@ describe('demo team', () => {
   const shiftsOf = (name: string) => changes.list('shifts').filter((s) => s.employeeId === byName(name).id);
 
   it('adds five demo people with this week and next scheduled', () => {
-    expect(people.map((p) => p.name)).toEqual(['Ana Ruiz', 'Ben Okafor', 'Chloe Park', 'Dev Patel', 'Emma Lund']);
+    expect(people.map((p) => p.name)).toEqual([
+      'Ana Ruiz',
+      'Ben Okafor',
+      'Chloe Park',
+      'Dev Patel',
+      'Emma Lund',
+    ]);
     expect(people.every((p) => p.demo)).toBe(true);
     expect(shiftsOf('Ben Okafor')).toHaveLength(8);
-    expect(shiftsOf('Emma Lund').map((s) => mondayIndex(s.date)).sort()).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+    expect(
+      shiftsOf('Emma Lund')
+        .map((s) => mondayIndex(s.date))
+        .sort(),
+    ).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
   });
 
   it('gives Dev this Friday as vacation instead of a shift', () => {
     const dev = byName('Dev Patel');
     expect(shiftsOf('Dev Patel')).toHaveLength(9);
-    expect(changes.timeOffFor(dev.id)).toMatchObject([{ start: '2026-10-02', end: '2026-10-02', type: 'vacation' }]);
+    expect(changes.timeOffFor(dev.id)).toMatchObject([
+      { start: '2026-10-02', end: '2026-10-02', type: 'vacation' },
+    ]);
   });
 
   it('adds the Saturday inventory count and tags', () => {
