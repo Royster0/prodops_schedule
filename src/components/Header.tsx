@@ -63,7 +63,12 @@ export function Header() {
         <SaveStatus />
       </div>
 
+      {/* Today, then the date between its arrows at the center, then the view switcher. */}
       <div className={styles.navRow}>
+        <Button className={styles.today} size={narrow ? 'sm' : 'md'} onClick={goToday} title="Today (T)">
+          Today
+        </Button>
+
         <nav className={styles.nav} aria-label="Dates">
           <Button
             icon="chevronLeft"
@@ -75,6 +80,9 @@ export function Header() {
           >
             Previous
           </Button>
+          <h2 className={styles.range} aria-live="polite">
+            {periodLabel(period, tiny)}
+          </h2>
           <Button
             icon="chevronRight"
             iconOnly
@@ -84,12 +92,6 @@ export function Header() {
             title="Next (→)"
           >
             Next
-          </Button>
-          <h2 className={styles.range} aria-live="polite">
-            {periodLabel(period, tiny)}
-          </h2>
-          <Button size={narrow ? 'sm' : 'md'} onClick={goToday} title="Today (T)">
-            Today
           </Button>
         </nav>
 
