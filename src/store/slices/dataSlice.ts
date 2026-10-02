@@ -23,6 +23,8 @@ export function createDataSlice({ repository }: StoreDeps): StateCreator<StoreSt
     async init() {
       const data = await repository.load();
       set({ data, status: 'ready' });
+      // A server-backed repository pushes changes made elsewhere.
+      repository.subscribe?.((next) => set({ data: next }));
     },
 
     commit(label, change, options) {

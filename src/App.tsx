@@ -1,6 +1,7 @@
 import { MotionConfig } from 'motion/react';
 import styles from './App.module.css';
 import { Dock } from './components/Dock';
+import { FilterBar } from './components/FilterBar';
 import { Header } from './components/Header';
 import { HintBar } from './components/HintBar';
 import { SelectionBar } from './components/SelectionBar';
@@ -20,6 +21,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <div className={styles.app}>
         <Header />
+        <FilterBar />
         <SelectionBar />
         <main className={styles.board} aria-label="Schedule">
           {ready && <Board />}

@@ -3,7 +3,13 @@ import { SheetFrame } from '../components/Sheet';
 import type { SheetState } from '../store/types';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import { ApplySheet } from './ApplySheet';
+import { ImportSheet } from './ImportSheet';
+import { ManageSheet } from './manage/ManageSheet';
+import { PatternSheet } from './PatternSheet';
+import { PersonSheet } from './PersonSheet';
 import { ShiftSheet } from './ShiftSheet';
+import { TagSheet } from './TagSheet';
+import { TemplateSheet } from './TemplateSheet';
 import { TimeOffSheet } from './TimeOffSheet';
 
 /** Renders the sheet on top of the stack. Closing it reveals the one beneath. */
@@ -33,7 +39,17 @@ function SheetContent({ sheet, onClose }: { sheet: SheetState; onClose(): void }
       return <TimeOffSheet {...sheet} onClose={onClose} />;
     case 'apply':
       return <ApplySheet preset={sheet.preset} onClose={onClose} />;
-    default:
-      return null;
+    case 'manage':
+      return <ManageSheet tab={sheet.tab} onClose={onClose} />;
+    case 'person':
+      return <PersonSheet employeeId={sheet.employeeId} onClose={onClose} />;
+    case 'template':
+      return <TemplateSheet templateId={sheet.templateId} onClose={onClose} />;
+    case 'pattern':
+      return <PatternSheet patternId={sheet.patternId} onClose={onClose} />;
+    case 'tag':
+      return <TagSheet tagId={sheet.tagId} onClose={onClose} />;
+    case 'import':
+      return <ImportSheet data={sheet.data} fileName={sheet.fileName} onClose={onClose} />;
   }
 }
