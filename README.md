@@ -72,7 +72,7 @@ only when their own data did. Pointer strokes are tracked outside React state.
 
 ## Storage
 
-With `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` set, people sign in with a magic link
+With `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` set, people sign in with Google or a magic link
 and the schedule is stored in Supabase, shared with the team in real time. The owner decides who
 can edit and who can only view. [SUPABASE.md](SUPABASE.md) has the setup steps (migrations, auth redirect URLs,
 env variables) and how it works.

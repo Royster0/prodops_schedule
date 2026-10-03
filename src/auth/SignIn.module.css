@@ -35,3 +35,31 @@
   flex: 1;
   justify-content: center;
 }
+
+.google {
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+}
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.or::before,
+.or::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line-2);
+  content: '';
+}
+
+.googleMark {
+  margin-right: 10px;
+  vertical-align: -3px;
+}

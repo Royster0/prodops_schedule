@@ -1,6 +1,6 @@
 # Supabase
 
-The schedule is stored in Supabase and people sign in with a magic link. Without the two env
+The schedule is stored in Supabase and people sign in with Google or a magic link by email. Without the two env
 variables below the app runs as before: no sign-in, data in this browser only.
 
 ## Setup
@@ -20,7 +20,24 @@ variables below the app runs as before: no sign-in, data in this browser only.
 3. **Email.** The Email provider is on by default. Supabase's built-in mailer only sends a few
    emails an hour, so set up custom SMTP (Authentication > Emails > SMTP Settings) before the
    team starts using it.
-4. **Env variables**, locally in `.env.local` and in Vercel (Project Settings > Environment
+4. **Google sign-in.**
+   - In [Google Cloud Console](https://console.cloud.google.com/), pick or create a project.
+     Under APIs & Services > OAuth consent screen (Google Auth Platform > Branding), set the app
+     name, support email and authorized domain `supabase.co` (plus your own domain if you use one),
+     with the scopes `openid`, `email` and `profile`. While the app is in Testing, only the test
+     users you list can sign in; publish it when the team is ready.
+   - Under APIs & Services > Credentials (Google Auth Platform > Clients), create an OAuth client
+     ID of type Web application. Authorized JavaScript origins: `http://localhost:5173` and your
+     production address. Authorized redirect URI: exactly
+     `https://<project-ref>.supabase.co/auth/v1/callback`. Copy the client ID and secret.
+   - In Supabase, Authentication > Sign In / Providers > Google: turn it on and paste the client ID
+     and secret. The secret stays in Supabase, never in the app.
+   - The app's own addresses come from the Redirect URLs in step 2, as for magic links.
+
+   Someone who uses Google and a magic link with the same email gets the same account, so invites
+   work either way.
+
+5. **Env variables**, locally in `.env.local` and in Vercel (Project Settings > Environment
    Variables, then redeploy):
 
    ```
@@ -33,8 +50,9 @@ variables below the app runs as before: no sign-in, data in this browser only.
 
 ## How it works
 
-**Signing in.** `src/auth/AuthGate.tsx` shows the sign-in screen until there is a session. The
-link in the email brings the person back signed in; supabase-js keeps the session in the browser
+**Signing in.** `src/auth/AuthGate.tsx` shows the sign-in screen until there is a session.
+"Continue with Google" goes to Google through Supabase and comes back signed in, as does the link
+in the email; supabase-js keeps the session in the browser
 and refreshes it.
 
 **Who sees what.** Every table belongs to a schedule. Each schedule has one **owner**
