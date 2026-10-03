@@ -40,6 +40,7 @@ const isString: Check = (v) => typeof v === 'string';
 const isNumber: Check = (v) => typeof v === 'number' && Number.isFinite(v);
 const isStringArray: Check = (v) => Array.isArray(v) && v.every(isString);
 const isNullableString: Check = (v) => v === null || isString(v);
+const isOptionalId: Check = (v) => v === undefined || isNullableString(v);
 
 const RECORD_FIELDS: Record<CollectionName, Record<string, Check>> = {
   employees: { name: isString, color: isHexColor, tags: isStringArray, order: isNumber },
@@ -60,6 +61,7 @@ const RECORD_FIELDS: Record<CollectionName, Record<string, Check>> = {
     end: isHHMM,
     breakMins: isNumber,
     templateId: isNullableString,
+    patternId: isOptionalId,
     templateName: isString,
     label: isString,
     color: isHexColor,

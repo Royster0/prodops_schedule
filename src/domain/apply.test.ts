@@ -228,3 +228,15 @@ describe('apply copy', () => {
     );
   });
 });
+
+describe('pattern link', () => {
+  it('records which pattern placed each shift, and not for plain template applies', () => {
+    const viaPattern = new ChangeSet(data);
+    applyShifts(viaPattern, request({ what: { kind: 'pattern', patternId: 'monThu' } }));
+    expect(viaPattern.list('shifts').every((s) => s.patternId === 'monThu')).toBe(true);
+
+    const viaTemplate = new ChangeSet(data);
+    applyShifts(viaTemplate, request());
+    expect(viaTemplate.list('shifts').every((s) => !s.patternId)).toBe(true);
+  });
+});

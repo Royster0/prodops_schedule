@@ -105,7 +105,9 @@ export function applyShifts(changes: ChangeSet, request: ApplyRequest): ApplyRes
     if (what.kind === 'pattern') {
       const templateId = pattern ? patternDayOn(pattern, request.from, date) : '';
       const template = templateId ? changes.get('templates', templateId) : undefined;
-      return template ? shiftFromTemplate(template, employeeId, date) : null;
+      return template
+        ? { ...shiftFromTemplate(template, employeeId, date), patternId: what.patternId }
+        : null;
     }
     if (!weekdays.has(mondayIndex(date))) return undefined;
     if (what.kind === 'template') {

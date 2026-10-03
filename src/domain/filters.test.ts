@@ -100,3 +100,44 @@ describe('visible rows', () => {
     expect(activeFilterCount({ ...EMPTY_FILTERS, search: 'a', kinds: ['L10', 'off'], tags: ['x'] })).toBe(4);
   });
 });
+
+describe('pattern filter', () => {
+  const withPatterns = makeData({
+    employees: [employee('ana'), employee('ben'), employee('cy')],
+    templates: [template('L10')],
+    shifts: [
+      shift('a', 'ana', '2026-10-05', { templateId: 'L10', patternId: 'alt' }),
+      shift('b', 'ben', '2026-10-05', { templateId: 'L10', patternId: 'monThu' }),
+      shift('c', 'cy', '2026-10-05', { templateId: 'L10' }),
+    ],
+    timeOff: [timeOff('t', 'cy', '2026-10-06', '2026-10-06')],
+  });
+  const matcher = createMatcher(
+    { ...EMPTY_FILTERS, patterns: ['alt'] },
+    withPatterns.templates,
+    withPatterns.employees,
+  );
+
+  it('matches only shifts placed by the chosen patterns', () => {
+    expect(matcher.shift(withPatterns.shifts.a)).toBe(true);
+    expect(matcher.shift(withPatterns.shifts.b)).toBe(false);
+    expect(matcher.shift(withPatterns.shifts.c)).toBe(false);
+    expect(matcher.timeOff(withPatterns.timeOff.t)).toBe(false);
+    expect(matcher.matchesAll).toBe(false);
+  });
+
+  it('hides people with no shifts from the pattern, and counts as an active filter', () => {
+    const filters = { ...EMPTY_FILTERS, patterns: ['alt'] };
+    const rows = visibleEmployees({
+      employees: Object.values(withPatterns.employees),
+      filters,
+      matcher,
+      dates: ['2026-10-05', '2026-10-06'],
+      shiftsOf: (id, date) =>
+        Object.values(withPatterns.shifts).filter((s) => s.employeeId === id && s.date === date),
+      timeOffOf: () => undefined,
+    });
+    expect(rows.map((e) => e.id)).toEqual(['ana']);
+    expect(activeFilterCount(filters)).toBe(1);
+  });
+});

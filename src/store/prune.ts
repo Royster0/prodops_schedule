@@ -7,7 +7,7 @@ import type { StoreState } from './types';
  * board filtering or painting with something that no longer exists.
  */
 export function pruneMissing(state: StoreState): Partial<StoreState> | null {
-  const { employees, tags, templates } = state.data;
+  const { employees, tags, templates, patterns } = state.data;
   const patch: Partial<StoreState> = {};
 
   const selected = [...state.selectedIds].filter((id) => employees[id]);
@@ -17,12 +17,14 @@ export function pruneMissing(state: StoreState): Partial<StoreState> | null {
   const people = filters.people.filter((id) => employees[id]);
   const tagIds = filters.tags.filter((id) => tags[id]);
   const kinds = filters.kinds.filter((kind) => kind === 'custom' || kind === 'off' || templates[kind]);
+  const patternIds = filters.patterns.filter((id) => patterns[id]);
   if (
     people.length !== filters.people.length ||
     tagIds.length !== filters.tags.length ||
-    kinds.length !== filters.kinds.length
+    kinds.length !== filters.kinds.length ||
+    patternIds.length !== filters.patterns.length
   ) {
-    patch.filters = { ...filters, people, tags: tagIds, kinds };
+    patch.filters = { ...filters, people, tags: tagIds, kinds, patterns: patternIds };
   }
 
   if (state.tool.kind === 'template' && !templates[state.tool.templateId]) patch.tool = { kind: 'select' };

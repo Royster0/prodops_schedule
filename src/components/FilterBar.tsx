@@ -1,6 +1,6 @@
 import { TIME_OFF_COLORS } from '../domain/color';
 import { activeFilterCount } from '../domain/filters';
-import { selectEmployees, selectTags, selectTemplates } from '../store/derived';
+import { selectEmployees, selectPatterns, selectTags, selectTemplates } from '../store/derived';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import { Button } from './Button';
 import { Checklist } from './Checklist';
@@ -16,6 +16,7 @@ export function FilterBar() {
   const employees = useScheduleStore(selectEmployees);
   const tags = useScheduleStore(selectTags);
   const templates = useScheduleStore(selectTemplates);
+  const patterns = useScheduleStore(selectPatterns);
   const { setFilters, clearFilters } = scheduleStore.getState();
   const active = activeFilterCount(filters);
 
@@ -55,6 +56,13 @@ export function FilterBar() {
           ]}
           selected={filters.kinds}
           onChange={(kinds) => setFilters({ kinds })}
+        />
+        <Checklist
+          label="Patterns"
+          options={patterns.map((p) => ({ id: p.id, label: p.name }))}
+          selected={filters.patterns}
+          onChange={(ids) => setFilters({ patterns: ids })}
+          empty="No work patterns yet."
         />
         <div className={styles.hide}>
           <Checkbox

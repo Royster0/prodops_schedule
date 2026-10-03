@@ -34,3 +34,13 @@ describe('migrate', () => {
     });
   });
 });
+
+describe('pattern links on shifts', () => {
+  it('loads shifts saved before pattern links existed, and ones with a link', () => {
+    const old = makeData({ shifts: [shift('s1', 'ana', '2026-10-01')] });
+    delete (old.shifts.s1 as { patternId?: unknown }).patternId;
+    expect(() => migrate({ version: 1, data: old })).not.toThrow();
+    const linked = makeData({ shifts: [shift('s2', 'ana', '2026-10-01', { patternId: 'p1' })] });
+    expect(migrate({ version: 1, data: linked }).shifts.s2.patternId).toBe('p1');
+  });
+});

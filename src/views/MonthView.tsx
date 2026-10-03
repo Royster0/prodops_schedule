@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { memo, useMemo, type CSSProperties, type MouseEvent } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
+import { dayAgenda } from '../domain/agenda';
 import { TIME_OFF_COLORS, TIME_OFF_LABELS, textOn } from '../domain/color';
 import { headcount } from '../domain/coverage';
 import { MONTH_SHORT, WEEKDAY_SHORT, dateRange, isSameMonth, isWeekend, parts } from '../domain/dates';
@@ -148,8 +149,6 @@ interface MonthDayProps {
 /** Most entries a day lists before "+N more". */
 const MAX_ENTRIES = 6;
 
-type Entry = { employee: Employee; shift: Shift } | { employee: Employee; timeOff: TimeOff };
-
 /** One calendar day. Re-renders only when one of its own entries changed. */
 const MonthDay = memo(function MonthDay({
   date,
@@ -169,11 +168,8 @@ const MonthDay = memo(function MonthDay({
     ? `Fill ${formatDayLabel(date)} for the selected people, or everyone shown`
     : `${formatDayLabel(date)}${holiday ? `, ${holiday.name}` : ''}, ${on} on. Open in Day view`;
 
-  // In people order: each person's time off, then their shifts.
-  const entries: Entry[] = employees.flatMap((employee, i) => {
-    const off = timeOff[i];
-    return [...(off ? [{ employee, timeOff: off }] : []), ...shifts[i].map((shift) => ({ employee, shift }))];
-  });
+  // Shifts by start time, then time off.
+  const entries = dayAgenda(employees, shifts, timeOff);
   const shown = entries.length > MAX_ENTRIES ? entries.slice(0, MAX_ENTRIES - 1) : entries;
   const more = entries.length - shown.length;
 

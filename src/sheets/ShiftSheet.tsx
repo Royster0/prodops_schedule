@@ -166,6 +166,8 @@ export function ShiftSheet(props: ShiftSheetProps) {
       color: template ? template.color : draft.color,
       tags: draft.tags,
       note: draft.note.trim(),
+      // Edits keep the pattern link, so the shift still shows under its pattern filter.
+      patternId: existing?.patternId ?? null,
     };
     scheduleStore
       .getState()
