@@ -89,6 +89,29 @@ describe('stale references', () => {
 });
 
 describe('view only', () => {
+  it('lets viewers open shifts and time off to read, but nothing that adds or edits', async () => {
+    const memory = memoryRepository(makeData({ employees: [employee('ana')] }));
+    const store = createScheduleStore({ repository: { ...memory.repository, readOnly: true } });
+    await store.getState().init();
+    const { openSheet, setTool, toggleTool } = store.getState();
+
+    openSheet({ kind: 'shift', employeeId: 'ana' });
+    openSheet({ kind: 'timeOff' });
+    openSheet({ kind: 'apply' });
+    openSheet({ kind: 'person', employeeId: 'ana' });
+    openSheet({ kind: 'template' });
+    expect(store.getState().sheets).toEqual([]);
+
+    openSheet({ kind: 'shift', shiftId: 's1' });
+    openSheet({ kind: 'timeOff', timeOffId: 'o1' });
+    openSheet({ kind: 'manage', tab: 'holidays' });
+    expect(store.getState().sheets.map((sheet) => sheet.kind)).toEqual(['shift', 'timeOff', 'manage']);
+
+    toggleTool({ kind: 'erase' });
+    setTool({ kind: 'erase' });
+    expect(store.getState().tool).toEqual({ kind: 'select' });
+  });
+
   it('keeps viewers from changing anything and says why', async () => {
     const memory = memoryRepository(makeData({ employees: [employee('ana')] }));
     const store = createScheduleStore({ repository: { ...memory.repository, readOnly: true } });

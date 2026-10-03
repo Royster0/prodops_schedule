@@ -201,102 +201,105 @@ function TeamList({ account }: { account: Account }) {
               repo.readOnly ? 'can view it' : 'can edit it'
             }.`}
       </p>
-      <ul className={styles.list}>
-        {owner && (
-          <li className={styles.item}>
-            <span className={styles.main}>
-              <span className={styles.name}>{owner.email || 'Owner'}</span>
-              <span className={styles.meta}>
-                Owner{owner.user_id === account.userId && ' · you'}
-                {personName(owner.employee_id) && ` · ${personName(owner.employee_id)}`}
+      {/* People who can only view see who owns it and their own access, not everyone's email. */}
+      {!repo.readOnly && (
+        <ul className={styles.list}>
+          {owner && (
+            <li className={styles.item}>
+              <span className={styles.main}>
+                <span className={styles.name}>{owner.email || 'Owner'}</span>
+                <span className={styles.meta}>
+                  Owner{owner.user_id === account.userId && ' · you'}
+                  {personName(owner.employee_id) && ` · ${personName(owner.employee_id)}`}
+                </span>
               </span>
-            </span>
-          </li>
-        )}
-        {others.map((m) => (
-          <li key={m.user_id} className={styles.item}>
-            <span className={styles.main}>
-              <span className={styles.name}>{m.email || 'Teammate'}</span>
-              <span className={styles.meta}>
-                {isOwner
-                  ? (personName(m.employee_id) ?? 'Not linked to anyone on the schedule')
-                  : [ROLE_LABELS[m.role], personName(m.employee_id), m.user_id === account.userId && 'you']
-                      .filter(Boolean)
-                      .join(' · ')}
+            </li>
+          )}
+          {others.map((m) => (
+            <li key={m.user_id} className={styles.item}>
+              <span className={styles.main}>
+                <span className={styles.name}>{m.email || 'Teammate'}</span>
+                <span className={styles.meta}>
+                  {isOwner
+                    ? (personName(m.employee_id) ?? 'Not linked to anyone on the schedule')
+                    : [ROLE_LABELS[m.role], personName(m.employee_id), m.user_id === account.userId && 'you']
+                        .filter(Boolean)
+                        .join(' · ')}
+                </span>
               </span>
-            </span>
-            {isOwner && (
-              <span className={styles.actions}>
-                <select
-                  aria-label={`Access for ${m.email}`}
-                  className={styles.roleSelect}
-                  value={m.role}
-                  onChange={(e) =>
-                    void run(
-                      client
-                        .from('schedule_members')
-                        .update({ role: e.target.value })
-                        .eq('schedule_id', scheduleId!)
-                        .eq('user_id', m.user_id),
-                    )
-                  }
-                >
-                  <option value="editor">{ROLE_LABELS.editor}</option>
-                  <option value="viewer">{ROLE_LABELS.viewer}</option>
-                </select>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    void run(
-                      client
-                        .from('schedule_members')
-                        .delete()
-                        .eq('schedule_id', scheduleId!)
-                        .eq('user_id', m.user_id),
-                    )
-                  }
-                >
-                  Remove
-                </Button>
+              {isOwner && (
+                <span className={styles.actions}>
+                  <select
+                    aria-label={`Access for ${m.email}`}
+                    className={styles.roleSelect}
+                    value={m.role}
+                    onChange={(e) =>
+                      void run(
+                        client
+                          .from('schedule_members')
+                          .update({ role: e.target.value })
+                          .eq('schedule_id', scheduleId!)
+                          .eq('user_id', m.user_id),
+                      )
+                    }
+                  >
+                    <option value="editor">{ROLE_LABELS.editor}</option>
+                    <option value="viewer">{ROLE_LABELS.viewer}</option>
+                  </select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      void run(
+                        client
+                          .from('schedule_members')
+                          .delete()
+                          .eq('schedule_id', scheduleId!)
+                          .eq('user_id', m.user_id),
+                      )
+                    }
+                  >
+                    Remove
+                  </Button>
+                </span>
+              )}
+            </li>
+          ))}
+          {team.invites.map((i) => (
+            <li key={i.email} className={styles.item}>
+              <span className={styles.main}>
+                <span className={styles.name}>{i.email}</span>
+                <span className={styles.meta}>
+                  Invited{personName(i.employee_id) && ` as ${personName(i.employee_id)}`} ·{' '}
+                  {ROLE_LABELS[i.role].toLowerCase()} once they sign in with this email
+                </span>
               </span>
-            )}
-          </li>
-        ))}
-        {team.invites.map((i) => (
-          <li key={i.email} className={styles.item}>
-            <span className={styles.main}>
-              <span className={styles.name}>{i.email}</span>
-              <span className={styles.meta}>
-                Invited{personName(i.employee_id) && ` as ${personName(i.employee_id)}`} ·{' '}
-                {ROLE_LABELS[i.role].toLowerCase()} once they sign in with this email
-              </span>
-            </span>
-            {isOwner && (
-              <span className={styles.actions}>
-                <Button variant="ghost" size="sm" onClick={() => void sendEmail(i.email)}>
-                  Resend
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    void run(
-                      client
-                        .from('schedule_invites')
-                        .delete()
-                        .eq('schedule_id', scheduleId!)
-                        .eq('email', i.email),
-                    )
-                  }
-                >
-                  Cancel
-                </Button>
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+              {isOwner && (
+                <span className={styles.actions}>
+                  <Button variant="ghost" size="sm" onClick={() => void sendEmail(i.email)}>
+                    Resend
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      void run(
+                        client
+                          .from('schedule_invites')
+                          .delete()
+                          .eq('schedule_id', scheduleId!)
+                          .eq('email', i.email),
+                      )
+                    }
+                  >
+                    Cancel
+                  </Button>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {isOwner && (
         <Checkbox

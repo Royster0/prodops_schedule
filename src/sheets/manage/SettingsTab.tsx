@@ -10,6 +10,7 @@ import { count } from '../../domain/format';
 import { formatHour } from '../../domain/time';
 import type { Settings } from '../../domain/types';
 import { scheduleStore, useScheduleStore } from '../../store/useScheduleStore';
+import sheetStyles from '../sheets.module.css';
 import styles from './manage.module.css';
 import { AccountSection, LocalLeftover } from './TeamSection';
 import { useAccount } from '../../auth/account';
@@ -52,7 +53,24 @@ export function SettingsTab() {
     }
   };
 
-  return (
+  const scheduleSettings = readOnly ? (
+    <>
+      <dl className={sheetStyles.details}>
+        <dt>Schedule title</dt>
+        <dd>{settings.title}</dd>
+        <dt>Week starts on</dt>
+        <dd>{settings.weekStart === 0 ? 'Sunday' : 'Monday'}</dd>
+        <dt>Time format</dt>
+        <dd>{settings.clock === 24 ? '24-hour (13:30)' : '12-hour (1:30 PM)'}</dd>
+        <dt>Timeline</dt>
+        <dd>
+          {formatHour(settings.dayStart, settings.clock)} to{' '}
+          {settings.dayEnd === 24 ? 'midnight' : formatHour(settings.dayEnd, settings.clock)}
+        </dd>
+      </dl>
+      <p className={styles.sectionHint}>Only people who can edit the schedule change these.</p>
+    </>
+  ) : (
     <>
       <Field label="Schedule title">
         {(id) => (
@@ -126,6 +144,12 @@ export function SettingsTab() {
       <p className={styles.sectionHint}>
         Used for the Day view and the time track on each shift. Day view widens to fit.
       </p>
+    </>
+  );
+
+  return (
+    <>
+      {scheduleSettings}
 
       <Group label="Appearance on this device">
         <Segmented<ThemePreference>

@@ -198,14 +198,16 @@ const DayRow = memo(function DayRow({
         data-employee-id={employee.id}
         data-date={date}
       >
-        <button
-          type="button"
-          className={styles.laneButton}
-          onClick={handleLaneClick}
-          data-range-start={range.start}
-          data-range-end={range.end}
-          aria-label={`Add a shift for ${employee.name} on ${formatDayLabel(date)}`}
-        />
+        {!ctx.readOnly && (
+          <button
+            type="button"
+            className={styles.laneButton}
+            onClick={handleLaneClick}
+            data-range-start={range.start}
+            data-range-end={range.end}
+            aria-label={`Add a shift for ${employee.name} on ${formatDayLabel(date)}`}
+          />
+        )}
         {timeOff && (
           <button
             type="button"

@@ -7,6 +7,7 @@ import styles from './manage.module.css';
 export function TagsTab() {
   const tags = useScheduleStore(selectTags);
   const employees = useScheduleStore(selectEmployees);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const { openSheet } = scheduleStore.getState();
 
   return (
@@ -22,18 +23,22 @@ export function TagsTab() {
                 <span className={styles.name}>{tag.name}</span>
                 <span className={styles.meta}>{count(people, 'person', 'people')}</span>
               </div>
-              <div className={styles.actions}>
-                <Button size="sm" onClick={() => openSheet({ kind: 'tag', tagId: tag.id })}>
-                  Edit
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className={styles.actions}>
+                  <Button size="sm" onClick={() => openSheet({ kind: 'tag', tagId: tag.id })}>
+                    Edit
+                  </Button>
+                </div>
+              )}
             </li>
           );
         })}
       </ul>
-      <Button variant="primary" icon="plus" onClick={() => openSheet({ kind: 'tag' })}>
-        New tag
-      </Button>
+      {!readOnly && (
+        <Button variant="primary" icon="plus" onClick={() => openSheet({ kind: 'tag' })}>
+          New tag
+        </Button>
+      )}
     </>
   );
 }
