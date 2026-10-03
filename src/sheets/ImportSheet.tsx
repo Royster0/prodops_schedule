@@ -44,8 +44,8 @@ export function ImportSheet({
         <strong>{fileName}</strong> has {describeCounts(data)}.
       </p>
       <Notice tone="warning">
-        Replacing removes everything in this browser and puts this file's schedule in its place. You can undo
-        it right after.
+        Replacing removes everything in the schedule you have open and puts this one in its place. You can
+        undo it right after.
       </Notice>
     </Sheet>
   );

@@ -108,6 +108,7 @@ export function NoMatches() {
 export function Corner({ shown }: { shown: readonly Employee[] }) {
   const total = useScheduleStore((s) => selectEmployees(s).length);
   const anySelected = useScheduleStore((s) => s.selectedIds.size > 0);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const { setSelected, clearSelection } = scheduleStore.getState();
   return (
     <div className={styles.corner}>
@@ -116,13 +117,15 @@ export function Corner({ shown }: { shown: readonly Employee[] }) {
           ? `${shown.length} of ${count(total, 'person', 'people')}`
           : count(total, 'person', 'people')}
       </span>
-      <button
-        type="button"
-        className={styles.selectAll}
-        onClick={() => (anySelected ? clearSelection() : setSelected(shown.map((e) => e.id)))}
-      >
-        {anySelected ? 'Clear selection' : 'Select all'}
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          className={styles.selectAll}
+          onClick={() => (anySelected ? clearSelection() : setSelected(shown.map((e) => e.id)))}
+        >
+          {anySelected ? 'Clear selection' : 'Select all'}
+        </button>
+      )}
     </div>
   );
 }
@@ -303,7 +306,7 @@ const WeekCell = memo(function WeekCell({
           />
         ))}
       </AnimatePresence>
-      {empty && (
+      {empty && !ctx.readOnly && (
         <button
           type="button"
           className={styles.add}

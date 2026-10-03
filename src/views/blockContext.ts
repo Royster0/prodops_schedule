@@ -14,6 +14,8 @@ export interface BlockContext {
   dayStart: number;
   dayEnd: number;
   matcher: Matcher;
+  /** The person can only view: no add buttons on empty spots. */
+  readOnly: boolean;
 }
 
 export function useBlockContext(): BlockContext {
@@ -23,8 +25,9 @@ export function useBlockContext(): BlockContext {
   const dayStart = useScheduleStore((s) => s.data.settings.dayStart);
   const dayEnd = useScheduleStore((s) => s.data.settings.dayEnd);
   const matcher = useScheduleStore(selectMatcher);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   return useMemo(
-    () => ({ templates, tags, clock, dayStart, dayEnd, matcher }),
-    [templates, tags, clock, dayStart, dayEnd, matcher],
+    () => ({ templates, tags, clock, dayStart, dayEnd, matcher, readOnly }),
+    [templates, tags, clock, dayStart, dayEnd, matcher, readOnly],
   );
 }

@@ -223,7 +223,7 @@ describe('apply copy', () => {
     const req = request({ conflict: 'keep' });
     const { result } = planApply(data, req);
     expect(describeApply(req, result, data, 12)).toBe(
-      'Ana Ruiz works Long day (7a–5:30p) on weekdays from Oct 5 through Oct 11: 5 shifts. ' +
+      'Ana Ruiz works Long day (7:00a–5:30p) on weekdays from Oct 5 through Oct 11: 5 shifts. ' +
         'Days that already have a shift are kept as they are.',
     );
   });

@@ -10,7 +10,10 @@ import { count } from '../../domain/format';
 import { formatHour } from '../../domain/time';
 import type { Settings } from '../../domain/types';
 import { scheduleStore, useScheduleStore } from '../../store/useScheduleStore';
+import sheetStyles from '../sheets.module.css';
 import styles from './manage.module.css';
+import { AccountSection, LocalLeftover } from './TeamSection';
+import { useAccount } from '../../auth/account';
 
 const START_HOURS = Array.from({ length: 13 }, (_, i) => i);
 const END_HOURS = Array.from({ length: 12 }, (_, i) => i + 13);
@@ -22,6 +25,8 @@ export function SettingsTab() {
   const [title, setTitle] = useState(settings.title);
   const [importError, setImportError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const account = useAccount();
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const { commit, setTheme, openSheet } = scheduleStore.getState();
 
   const change = (patch: Partial<Settings>) => {
@@ -48,7 +53,24 @@ export function SettingsTab() {
     }
   };
 
-  return (
+  const scheduleSettings = readOnly ? (
+    <>
+      <dl className={sheetStyles.details}>
+        <dt>Schedule title</dt>
+        <dd>{settings.title}</dd>
+        <dt>Week starts on</dt>
+        <dd>{settings.weekStart === 0 ? 'Sunday' : 'Monday'}</dd>
+        <dt>Time format</dt>
+        <dd>{settings.clock === 24 ? '24-hour (13:30)' : '12-hour (1:30 PM)'}</dd>
+        <dt>Timeline</dt>
+        <dd>
+          {formatHour(settings.dayStart, settings.clock)} to{' '}
+          {settings.dayEnd === 24 ? 'midnight' : formatHour(settings.dayEnd, settings.clock)}
+        </dd>
+      </dl>
+      <p className={styles.sectionHint}>Only people who can edit the schedule change these.</p>
+    </>
+  ) : (
     <>
       <Field label="Schedule title">
         {(id) => (
@@ -122,6 +144,12 @@ export function SettingsTab() {
       <p className={styles.sectionHint}>
         Used for the Day view and the time track on each shift. Day view widens to fit.
       </p>
+    </>
+  );
+
+  return (
+    <>
+      {scheduleSettings}
 
       <Group label="Appearance on this device">
         <Segmented<ThemePreference>
@@ -140,20 +168,27 @@ export function SettingsTab() {
 
       <h3 className={styles.section}>Your data</h3>
       <p className={styles.sectionHint}>
-        The schedule is saved in this browser. Export a copy to keep a backup or move it to another device.
+        {account
+          ? 'The schedule is saved to your team’s account. Export a copy to keep a backup.'
+          : 'The schedule is saved in this browser. Export a copy to keep a backup or move it to another device.'}
       </p>
       <div className={styles.toolbar}>
         <Button icon="download" onClick={() => downloadSchedule(scheduleStore.getState().data, today())}>
           Export
         </Button>
-        <Button icon="upload" onClick={() => fileRef.current?.click()}>
-          Import…
-        </Button>
+        {!readOnly && (
+          <Button icon="upload" onClick={() => fileRef.current?.click()}>
+            Import…
+          </Button>
+        )}
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
       </div>
       {importError && <Notice tone="warning">{importError}</Notice>}
+      <LocalLeftover />
 
-      {demoCount > 0 && (
+      <AccountSection />
+
+      {demoCount > 0 && !readOnly && (
         <>
           <div className={styles.divider} />
           <h3 className={styles.section}>Demo team</h3>

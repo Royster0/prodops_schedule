@@ -29,6 +29,7 @@ export function HolidaysTab() {
   const [name, setName] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const { commit } = scheduleStore.getState();
   const year = parts(today()).year;
 
@@ -77,6 +78,31 @@ export function HolidaysTab() {
       (changes) => group.ids.forEach((id) => changes.remove('holidays', id)),
       { toast: `Removed ${group.name}.` },
     );
+
+  const list = (
+    <ul className={styles.list}>
+      {groups.length === 0 && (
+        <li className={styles.empty}>
+          No holidays yet. Holidays are highlighted and skipped when applying shifts.
+        </li>
+      )}
+      {groups.map((group) => (
+        <li key={group.ids[0]} className={styles.item}>
+          <div className={styles.main}>
+            <span className={styles.name}>{group.name}</span>
+            <span className={styles.meta}>{describeGroup(group)}</span>
+          </div>
+          {!readOnly && (
+            <Button icon="trash" iconOnly variant="ghost" size="sm" onClick={() => remove(group)}>
+              Remove {group.name}
+            </Button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (readOnly) return list;
 
   return (
     <>
@@ -152,24 +178,7 @@ export function HolidaysTab() {
         )}
       </form>
 
-      <ul className={styles.list}>
-        {groups.length === 0 && (
-          <li className={styles.empty}>
-            No holidays yet. Holidays are highlighted and skipped when applying shifts.
-          </li>
-        )}
-        {groups.map((group) => (
-          <li key={group.ids[0]} className={styles.item}>
-            <div className={styles.main}>
-              <span className={styles.name}>{group.name}</span>
-              <span className={styles.meta}>{describeGroup(group)}</span>
-            </div>
-            <Button icon="trash" iconOnly variant="ghost" size="sm" onClick={() => remove(group)}>
-              Remove {group.name}
-            </Button>
-          </li>
-        ))}
-      </ul>
+      {list}
     </>
   );
 }

@@ -2,6 +2,7 @@ import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 import { LocalStorageRepository } from '../data/localStorageRepository';
 import { loadPreferences, type ThemePreference } from '../data/preferences';
+import { SwitchableRepository } from '../data/switchableRepository';
 import type { ViewMode } from '../domain/types';
 import { createDataSlice, type StoreDeps } from './slices/dataSlice';
 import { createFiltersSlice } from './slices/filtersSlice';
@@ -34,7 +35,8 @@ export type ScheduleStore = ReturnType<typeof createScheduleStore>;
 
 const preferences = loadPreferences();
 
-export const repository = new LocalStorageRepository();
+/** Browser storage until someone signs in to Supabase (see AuthGate). */
+export const repository = new SwitchableRepository(new LocalStorageRepository());
 
 /** The app's single store. */
 export const scheduleStore = createScheduleStore({

@@ -27,11 +27,24 @@ export function Header() {
   const period = useScheduleStore(selectPeriod);
   const filterCount = useScheduleStore((s) => activeFilterCount(s.filters));
   const filterBarOpen = useScheduleStore((s) => s.filterBarOpen);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const narrow = useMediaQuery(NARROW);
   const tiny = useMediaQuery(TINY);
   const { goPrev, goNext, goToday, setView, openSheet, setFilterBarOpen } = scheduleStore.getState();
 
-  const moreEntries = (): MenuEntry[] => [
+  const moreEntries = (): MenuEntry[] => (readOnly ? viewerEntries() : editorEntries());
+
+  const viewerEntries = (): MenuEntry[] => [
+    {
+      label: 'People and shifts',
+      icon: 'people',
+      onSelect: () => openSheet({ kind: 'manage', tab: 'people' }),
+    },
+    { label: 'Holidays', icon: 'flag', onSelect: () => openSheet({ kind: 'manage', tab: 'holidays' }) },
+    { label: 'Settings', icon: 'settings', onSelect: () => openSheet({ kind: 'manage', tab: 'settings' }) },
+  ];
+
+  const editorEntries = (): MenuEntry[] => [
     {
       label: 'Manage people and shifts',
       icon: 'people',
@@ -120,12 +133,16 @@ export function Header() {
         >
           Filter
         </Button>
-        <Button icon="apply" collapseLabel onClick={() => openSheet({ kind: 'apply' })}>
-          Apply shifts
-        </Button>
-        <Button icon="plus" variant="primary" collapseLabel onClick={() => openSheet({ kind: 'shift' })}>
-          Add shift
-        </Button>
+        {!readOnly && (
+          <>
+            <Button icon="apply" collapseLabel onClick={() => openSheet({ kind: 'apply' })}>
+              Apply shifts
+            </Button>
+            <Button icon="plus" variant="primary" collapseLabel onClick={() => openSheet({ kind: 'shift' })}>
+              Add shift
+            </Button>
+          </>
+        )}
         <MenuButton label="More" icon="more" iconOnly entries={moreEntries} />
       </div>
     </header>
@@ -135,12 +152,16 @@ export function Header() {
 function SaveStatus() {
   const saveState = useScheduleStore((s) => s.saveState);
   const savedLabel = useScheduleStore((s) => s.savedLabel);
+  const errorLabel = useScheduleStore((s) => s.errorLabel);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const text =
     saveState === 'saving'
       ? 'Saving…'
       : saveState === 'error'
-        ? "Couldn't save. Storage may be full."
-        : savedLabel;
+        ? errorLabel
+        : readOnly
+          ? 'View only'
+          : savedLabel;
   return (
     <span
       className={[styles.status, saveState === 'error' && styles.statusError].filter(Boolean).join(' ')}

@@ -49,7 +49,7 @@ export type Clock = 12 | 24;
 
 /**
  * Formats a time of day.
- * 12-hour compact: '7a', '5:30p', '12p'. 12-hour long: '7:00 AM'. 24-hour: '07:00'.
+ * 12-hour compact: '7:00a', '5:30p', '12:00p'. 12-hour long: '7:00 AM'. 24-hour: '07:00'.
  */
 export function formatTime(time: HHMM, clock: Clock, style: 'compact' | 'long' = 'compact'): string {
   if (clock === 24) return time;
@@ -59,20 +59,20 @@ export function formatTime(time: HHMM, clock: Clock, style: 'compact' | 'long' =
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
   const isPm = h24 >= 12;
   if (style === 'long') return `${h12}:${String(m).padStart(2, '0')} ${isPm ? 'PM' : 'AM'}`;
-  return `${h12}${m === 0 ? '' : `:${String(m).padStart(2, '0')}`}${isPm ? 'p' : 'a'}`;
+  return `${h12}:${String(m).padStart(2, '0')}${isPm ? 'p' : 'a'}`;
 }
 
-/** '7a–5:30p' or '07:00–17:30'. Uses an en dash. */
+/** '7:00a–5:30p' or '07:00–17:30'. Uses an en dash. */
 export function formatTimeRange(start: HHMM, end: HHMM, clock: Clock): string {
   return `${formatTime(start, clock)}–${formatTime(end, clock)}`;
 }
 
-/** Hour labels for axes: '6a', '12p' or '06'. Hour 24 reads as midnight. */
+/** Whole hours: '6:00a', '12:00p' or '06:00'. Hour 24 reads as midnight. */
 export function formatHour(hour: number, clock: Clock): string {
   const h = hour % 24;
-  if (clock === 24) return String(h).padStart(2, '0');
+  if (clock === 24) return `${String(h).padStart(2, '0')}:00`;
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}${h >= 12 ? 'p' : 'a'}`;
+  return `${h12}:00${h >= 12 ? 'p' : 'a'}`;
 }
 
 /** Rounds minutes down to a step, e.g. 30 minutes. */
