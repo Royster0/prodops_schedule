@@ -25,9 +25,14 @@ export interface CommitOptions<R> {
 
 export interface DataSlice {
   data: ScheduleData;
-  status: 'loading' | 'ready';
+  status: 'loading' | 'ready' | 'error';
+  /** Why loading failed, when status is 'error'. */
+  loadError: string | null;
   saveState: SaveState;
   savedLabel: string;
+  errorLabel: string;
+  /** This person can look at the schedule but not change it. */
+  readOnly: boolean;
   init(): Promise<void>;
   /**
    * Runs a change against a working copy and commits everything it did as one

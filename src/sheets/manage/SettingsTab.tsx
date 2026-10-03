@@ -11,6 +11,8 @@ import { formatHour } from '../../domain/time';
 import type { Settings } from '../../domain/types';
 import { scheduleStore, useScheduleStore } from '../../store/useScheduleStore';
 import styles from './manage.module.css';
+import { AccountSection } from './TeamSection';
+import { useAccount } from '../../auth/account';
 
 const START_HOURS = Array.from({ length: 13 }, (_, i) => i);
 const END_HOURS = Array.from({ length: 12 }, (_, i) => i + 13);
@@ -22,6 +24,7 @@ export function SettingsTab() {
   const [title, setTitle] = useState(settings.title);
   const [importError, setImportError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const account = useAccount();
   const { commit, setTheme, openSheet } = scheduleStore.getState();
 
   const change = (patch: Partial<Settings>) => {
@@ -140,7 +143,9 @@ export function SettingsTab() {
 
       <h3 className={styles.section}>Your data</h3>
       <p className={styles.sectionHint}>
-        The schedule is saved in this browser. Export a copy to keep a backup or move it to another device.
+        {account
+          ? 'The schedule is saved to your team’s account. Export a copy to keep a backup.'
+          : 'The schedule is saved in this browser. Export a copy to keep a backup or move it to another device.'}
       </p>
       <div className={styles.toolbar}>
         <Button icon="download" onClick={() => downloadSchedule(scheduleStore.getState().data, today())}>
@@ -152,6 +157,8 @@ export function SettingsTab() {
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
       </div>
       {importError && <Notice tone="warning">{importError}</Notice>}
+
+      <AccountSection />
 
       {demoCount > 0 && (
         <>

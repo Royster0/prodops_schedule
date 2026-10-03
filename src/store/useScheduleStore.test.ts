@@ -87,3 +87,37 @@ describe('stale references', () => {
     expect(s.tool).toEqual({ kind: 'select' });
   });
 });
+
+describe('view only', () => {
+  it('keeps viewers from changing anything and says why', async () => {
+    const memory = memoryRepository(makeData({ employees: [employee('ana')] }));
+    const store = createScheduleStore({ repository: { ...memory.repository, readOnly: true } });
+    await store.getState().init();
+
+    store
+      .getState()
+      .commit('add shift', (changes) => changes.put('shifts', shift('s1', 'ana', '2026-10-01')));
+    store
+      .getState()
+      .persistOps([
+        { collection: 'shifts', id: 's2', before: null, after: shift('s2', 'ana', '2026-10-02') },
+      ]);
+
+    expect(store.getState().readOnly).toBe(true);
+    expect(store.getState().undoStack).toHaveLength(0);
+    expect(memory.batches).toHaveLength(0);
+    expect(store.getState().toast?.message).toMatch(/view this schedule/);
+  });
+
+  it('shows why loading failed', async () => {
+    const store = createScheduleStore({
+      repository: {
+        savedLabel: 'Saved',
+        load: () => Promise.reject(new Error('Offline')),
+        apply: async () => {},
+      },
+    });
+    await store.getState().init();
+    expect(store.getState()).toMatchObject({ status: 'error', loadError: 'Offline' });
+  });
+});

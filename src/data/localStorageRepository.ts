@@ -77,3 +77,21 @@ export class LocalStorageRepository implements ScheduleRepository {
     this.storage.setItem(STORAGE_KEY, JSON.stringify(stored));
   }
 }
+
+/**
+ * Hands over the schedule saved in this browser, once: the copy is moved aside so a
+ * later sign-in with another account doesn't pick it up again. Null when there is none.
+ */
+export function takeLocalSchedule(storage: Storage | undefined = safeLocalStorage()): ScheduleData | null {
+  const raw = storage?.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const data = migrate(JSON.parse(raw));
+    storage!.setItem(`${STORAGE_KEY}.moved`, raw);
+    storage!.removeItem(STORAGE_KEY);
+    return data;
+  } catch (error) {
+    console.warn('The schedule saved in this browser could not be read.', error);
+    return null;
+  }
+}

@@ -45,8 +45,9 @@ src/
             types, dates, time, format, color, shifts, changeSet, undo, painting, timeOff,
             apply, patterns, filters, coverage, holidays, copy, manage, demo, seed, period,
             scheduleIndex
-  data/     Storage: the ScheduleRepository interface, LocalStorageRepository, schema and
-            migrations, export and import, per-device preferences.
+  data/     Storage: the ScheduleRepository interface, LocalStorageRepository, SupabaseRepository
+            and its row mapping, schema and migrations, export and import, preferences.
+  auth/     Magic link sign-in and the signed-in account.
   store/    One Zustand store composed from slices (data, undo, view, tool, selection, filters,
             ui), memoized selectors, and board actions.
   components/ Shared UI: Header, Dock, FilterBar, SelectionBar, HintBar, Toast, Popover, Menu,
@@ -71,7 +72,11 @@ only when their own data did. Pointer strokes are tracked outside React state.
 
 ## Storage
 
-Data is saved in this browser under one versioned localStorage key (`schedule.v1`), with writes
-debounced by about 250 ms. UI preferences (view and theme) live under `schedule.prefs.v1`.
-[SUPABASE.md](SUPABASE.md) describes how to move storage to Supabase, with row level security and
-realtime, without changing the UI.
+With `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` set, people sign in with a magic link
+and the schedule is stored in Supabase, shared with the team in real time. Editors can change it,
+viewers can look. [SUPABASE.md](SUPABASE.md) has the setup steps (migrations, auth redirect URLs,
+env variables) and how it works.
+
+Without them, data is saved in this browser under one versioned localStorage key (`schedule.v1`),
+with writes debounced by about 250 ms. UI preferences (view and theme) always stay on the device,
+under `schedule.prefs.v1`.

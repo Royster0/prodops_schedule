@@ -135,12 +135,16 @@ export function Header() {
 function SaveStatus() {
   const saveState = useScheduleStore((s) => s.saveState);
   const savedLabel = useScheduleStore((s) => s.savedLabel);
+  const errorLabel = useScheduleStore((s) => s.errorLabel);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const text =
     saveState === 'saving'
       ? 'Saving…'
       : saveState === 'error'
-        ? "Couldn't save. Storage may be full."
-        : savedLabel;
+        ? errorLabel
+        : readOnly
+          ? 'View only'
+          : savedLabel;
   return (
     <span
       className={[styles.status, saveState === 'error' && styles.statusError].filter(Boolean).join(' ')}

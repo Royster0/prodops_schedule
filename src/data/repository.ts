@@ -14,4 +14,8 @@ export interface ScheduleRepository {
   flush?(): void;
   /** Header status once all writes have landed, e.g. "Saved in this browser". */
   readonly savedLabel: string;
+  /** Header status when a write fails. */
+  readonly errorLabel?: string;
+  /** True when this person may look but not change anything. Checked after load(). */
+  readonly readOnly?: boolean;
 }
