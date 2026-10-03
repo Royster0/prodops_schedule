@@ -2,39 +2,52 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useAccount, type Account } from '../../auth/account';
 import { Button } from '../../components/Button';
-import { Field, Notice } from '../../components/forms';
+import { Checkbox, Field, Notice } from '../../components/forms';
 import { takeLocalSchedule } from '../../data/localStorageRepository';
 import { appUrl, type ScheduleMembership, type ScheduleRole } from '../../data/supabaseRepository';
-import { scheduleStore } from '../../store/useScheduleStore';
+import { scheduleStore, useScheduleStore } from '../../store/useScheduleStore';
 import styles from './manage.module.css';
 
 interface Member {
   user_id: string;
   email: string;
   role: ScheduleRole;
+  employee_id: string | null;
 }
 
 interface Invite {
   email: string;
   role: ScheduleRole;
+  employee_id: string | null;
 }
 
 interface Team {
   members: Member[];
   invites: Invite[];
+  /** Anyone who signs in can view it. */
+  open: boolean;
 }
 
 async function fetchTeam(client: SupabaseClient, scheduleId: string): Promise<Team | null> {
-  const [m, i] = await Promise.all([
+  const [m, i, s] = await Promise.all([
     client
       .from('schedule_members')
-      .select('user_id, email, role')
+      .select('user_id, email, role, employee_id')
       .eq('schedule_id', scheduleId)
       .order('joined_at'),
-    client.from('schedule_invites').select('email, role').eq('schedule_id', scheduleId).order('created_at'),
+    client
+      .from('schedule_invites')
+      .select('email, role, employee_id')
+      .eq('schedule_id', scheduleId)
+      .order('created_at'),
+    client.from('schedules').select('open_to_signed_in').eq('id', scheduleId).single(),
   ]);
-  if (m.error || i.error) return null;
-  return { members: m.data as Member[], invites: i.data as Invite[] };
+  if (m.error || i.error || s.error) return null;
+  return {
+    members: m.data as Member[],
+    invites: i.data as Invite[],
+    open: !!(s.data as { open_to_signed_in?: boolean }).open_to_signed_in,
+  };
 }
 
 const ROLE_LABELS: Record<ScheduleRole, string> = { editor: 'Can edit', viewer: 'Can view' };
@@ -71,6 +84,8 @@ function TeamList({ account }: { account: Account }) {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const employees = useScheduleStore((s) => s.data.employees);
+  const personName = (id: string | null) => (id ? employees[id]?.name : undefined);
 
   const show = useCallback((next: Team | null) => {
     if (next) setTeam(next);
@@ -147,6 +162,17 @@ function TeamList({ account }: { account: Account }) {
     }
   };
 
+  const setOpen = async (open: boolean) => {
+    setTeam((current) => current && { ...current, open });
+    try {
+      await repo.setOpenToSignedIn(open);
+      setError(null);
+    } catch (openError) {
+      setError(openError instanceof Error ? openError.message : String(openError));
+    }
+    refresh();
+  };
+
   const leave = async () => {
     if (!scheduleId) return;
     const { error: leaveError } = await client
@@ -180,7 +206,10 @@ function TeamList({ account }: { account: Account }) {
           <li className={styles.item}>
             <span className={styles.main}>
               <span className={styles.name}>{owner.email || 'Owner'}</span>
-              <span className={styles.meta}>Owner{owner.user_id === account.userId && ' · you'}</span>
+              <span className={styles.meta}>
+                Owner{owner.user_id === account.userId && ' · you'}
+                {personName(owner.employee_id) && ` · ${personName(owner.employee_id)}`}
+              </span>
             </span>
           </li>
         )}
@@ -188,12 +217,13 @@ function TeamList({ account }: { account: Account }) {
           <li key={m.user_id} className={styles.item}>
             <span className={styles.main}>
               <span className={styles.name}>{m.email || 'Teammate'}</span>
-              {!isOwner && (
-                <span className={styles.meta}>
-                  {ROLE_LABELS[m.role]}
-                  {m.user_id === account.userId && ' · you'}
-                </span>
-              )}
+              <span className={styles.meta}>
+                {isOwner
+                  ? (personName(m.employee_id) ?? 'Not linked to anyone on the schedule')
+                  : [ROLE_LABELS[m.role], personName(m.employee_id), m.user_id === account.userId && 'you']
+                      .filter(Boolean)
+                      .join(' · ')}
+              </span>
             </span>
             {isOwner && (
               <span className={styles.actions}>
@@ -238,7 +268,8 @@ function TeamList({ account }: { account: Account }) {
             <span className={styles.main}>
               <span className={styles.name}>{i.email}</span>
               <span className={styles.meta}>
-                Invited · {ROLE_LABELS[i.role].toLowerCase()} once they sign in with this email
+                Invited{personName(i.employee_id) && ` as ${personName(i.employee_id)}`} ·{' '}
+                {ROLE_LABELS[i.role].toLowerCase()} once they sign in with this email
               </span>
             </span>
             {isOwner && (
@@ -267,6 +298,18 @@ function TeamList({ account }: { account: Account }) {
         ))}
       </ul>
 
+      {isOwner && (
+        <Checkbox
+          label="Anyone who signs in can view this schedule"
+          checked={team.open}
+          onChange={(open) => void setOpen(open)}
+          hint={
+            team.open
+              ? "Accounts you haven't linked to someone on the schedule get view only. Link people in People, or change access here."
+              : 'Only people you invite or link to someone on the schedule can see it.'
+          }
+        />
+      )}
       {isOwner ? (
         <form className={styles.addRow} onSubmit={invite}>
           <Field label="Invite by email">
@@ -293,6 +336,8 @@ function TeamList({ account }: { account: Account }) {
             Invite
           </Button>
         </form>
+      ) : team.open ? (
+        <p className={styles.sectionHint}>Anyone who signs in can view this schedule.</p>
       ) : (
         <div className={styles.toolbar}>
           <Button variant="danger" onClick={() => void leave()}>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAccount } from '../../auth/account';
+import { ACCESS_LABELS, usePeopleAccess, type PersonAccess } from '../../auth/peopleAccess';
 import { Avatar } from '../../components/Avatar';
 import { Button } from '../../components/Button';
 import { Field } from '../../components/forms';
@@ -11,6 +13,8 @@ import styles from './manage.module.css';
 export function PeopleTab() {
   const employees = useScheduleStore(selectEmployees);
   const tags = useScheduleStore((s) => s.data.tags);
+  const { access } = usePeopleAccess();
+  const isOwner = !!useAccount()?.repository.isOwner;
   const [names, setNames] = useState('');
   const parsed = parseNames(names);
   const { commit, openSheet } = scheduleStore.getState();
@@ -39,6 +43,9 @@ export function PeopleTab() {
                   .join(', ') || 'No tags'}
                 {employee.demo ? ' · Demo' : ''}
               </span>
+              {access && (isOwner || access.byPerson[employee.id]) && (
+                <SignInLine access={access.byPerson[employee.id]} />
+              )}
             </div>
             <div className={styles.actions}>
               <Button
@@ -84,5 +91,15 @@ export function PeopleTab() {
         {parsed.length > 1 ? `Add ${count(parsed.length, 'person', 'people')}` : 'Add person'}
       </Button>
     </>
+  );
+}
+
+function SignInLine({ access }: { access: PersonAccess | undefined }) {
+  return (
+    <span className={styles.meta}>
+      {access
+        ? `${access.email} · ${access.owner ? 'Owner' : ACCESS_LABELS[access.role]}${access.invited ? ' (invited)' : ''}`
+        : 'No sign-in linked'}
+    </span>
   );
 }

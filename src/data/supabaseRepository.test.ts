@@ -227,4 +227,25 @@ describe('SupabaseRepository', () => {
       { email: 'sam@example.com', options: { emailRedirectTo: expect.any(String), shouldCreateUser: true } },
     ]);
   });
+
+  it('links a sign-in to a person only after the person is saved', async () => {
+    const { fake, repo } = await loaded({ holdWrites: true });
+    const saved = repo.apply([
+      { collection: 'employees', id: 'e9', before: null, after: employee('e9', { name: 'Sam' }) },
+    ]);
+    const assigned = repo.assignPerson('e9', 'sam@example.com', 'editor');
+    await tick();
+    expect(fake.rpcCalls).toHaveLength(0);
+
+    fake.applyCalls[0].settle();
+    await saved;
+    expect(await assigned).toBe('member');
+    expect(fake.rpcCalls).toEqual([
+      {
+        name: 'assign_person',
+        args: { p_schedule: 'sched-1', p_employee: 'e9', p_email: 'sam@example.com', p_role: 'editor' },
+        appliedBefore: 1,
+      },
+    ]);
+  });
 });

@@ -131,3 +131,9 @@
   font-size: 12.5px;
   text-align: center;
 }
+
+.signInRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}

@@ -63,9 +63,22 @@ people, changes someone's access or removes them, and nobody can change the owne
 so a schedule can't be left without one. Anyone else can leave. Viewers see "View only" in the
 header, the painting tools and Add shift are hidden, and the app refuses their edits with a toast.
 
+**People and their sign-ins.** The owner links a sign-in email to a person on the schedule
+(Manage > People > Edit) and picks what that person can do, Can edit or Can view. That goes
+through `assign_person()`: an email that has already signed in gets that access right away, and
+any other email gets an invite carrying the person, emailed like any invite. Each person has at
+most one sign-in. Unlinking someone, or linking the person to a different email, puts the old
+account back to view only. Deleting a person keeps their account's access as it was.
+
+**View only by default.** A schedule marked "Anyone who signs in can view this schedule"
+(`schedules.open_to_signed_in`, owner only, in Settings > Sharing) makes everyone who signs in a
+viewer of it until the owner links them to a person or changes their access. The first schedule
+ever created starts open, and the migration opens the oldest existing one. Leaving an open
+schedule isn't offered, since signing in again would bring the person back as a viewer.
+
 **Joining and existing schedules.** On every load the app calls `join_schedule()`. It turns any
-invites for the person's email into memberships, then, if they belong to no schedule, creates one
-they own.
+invites for the person's email into memberships, adds them as a viewer of every open schedule,
+then, if they still belong to no schedule, creates one they own.
 
 Inviting someone saves the invite and emails them a sign-in link (the Magic Link email template,
 which you can reword under Authentication > Emails). Using that link, or signing in later with

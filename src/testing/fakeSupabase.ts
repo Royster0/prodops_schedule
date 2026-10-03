@@ -34,6 +34,8 @@ export function fakeSupabase({
   const applyCalls: ApplyCall[] = [];
   const joinCalls: Record<string, unknown>[] = [];
   const otpCalls: Record<string, unknown>[] = [];
+  /** Calls to other functions (assign_person, set_schedule_open), with what had been applied by then. */
+  const rpcCalls: { name: string; args: Record<string, unknown>; appliedBefore: number }[] = [];
   const handlers: { event: string; table: string; handler: Handler }[] = [];
   let onStatus: ((status: string) => void) | null = null;
 
@@ -74,6 +76,11 @@ export function fakeSupabase({
         joinCalls.push(args as Record<string, unknown>);
         return Promise.resolve({ data: [{ schedule_id: scheduleId, role, created }], error: null });
       }
+      if (name !== 'apply_changes') {
+        const settled = applyCalls.length;
+        rpcCalls.push({ name, args: args as unknown as Record<string, unknown>, appliedBefore: settled });
+        return Promise.resolve({ data: name === 'assign_person' ? 'member' : null, error: null });
+      }
       return new Promise<Result>((resolve) => {
         const call: ApplyCall = { ...args, settle: (error) => resolve({ data: null, error: error ?? null }) };
         applyCalls.push(call);
@@ -96,6 +103,7 @@ export function fakeSupabase({
     applyCalls,
     joinCalls,
     otpCalls,
+    rpcCalls,
     rows,
     /** Pushes a realtime event as Supabase would. */
     emit(table: string, eventType: 'INSERT' | 'UPDATE' | 'DELETE', row: Row) {

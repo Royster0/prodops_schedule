@@ -27,6 +27,9 @@ export interface ScheduleMembership {
   ownerId: string | null;
 }
 
+/** What assignPerson did: the email already had access, got an invite, or was unlinked. */
+export type AssignResult = 'member' | 'invited' | 'unlinked';
+
 /** Remembers which schedule to open for people on more than one. */
 export const CURRENT_SCHEDULE_KEY = 'schedule.current';
 
@@ -166,6 +169,39 @@ export class SupabaseRepository implements ScheduleRepository {
       options: { emailRedirectTo: appUrl(), shouldCreateUser: true },
     });
     if (error) throw error;
+  }
+
+  /**
+   * Owner only: links a sign-in email to a person on the schedule with the access they
+   * get, or unlinks them with an empty email (their account goes back to view only).
+   * Waits for this tab's unsaved changes first, so a person added a moment ago exists.
+   */
+  async assignPerson(employeeId: string, email: string, role: ScheduleRole): Promise<AssignResult> {
+    await this.whenSaved();
+    const { data, error } = await this.client.rpc('assign_person', {
+      p_schedule: this.scheduleId,
+      p_employee: employeeId,
+      p_email: email,
+      p_role: role,
+    });
+    if (error) throw error;
+    return data as AssignResult;
+  }
+
+  /** Owner only: whether anyone who signs in can view this schedule. */
+  async setOpenToSignedIn(open: boolean): Promise<void> {
+    const { error } = await this.client.rpc('set_schedule_open', {
+      p_schedule: this.scheduleId,
+      p_open: open,
+    });
+    if (error) throw error;
+  }
+
+  /** Resolves once every change made in this tab so far has been stored. */
+  private whenSaved(): Promise<void> {
+    const last = this.queue.at(-1) ?? this.inFlight;
+    if (!last) return Promise.resolve();
+    return new Promise((resolve, reject) => last.waiters.push({ resolve, reject }));
   }
 
   /** Per account, so two people sharing a browser each keep their own choice. */
