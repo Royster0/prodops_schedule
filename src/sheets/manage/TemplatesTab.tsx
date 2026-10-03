@@ -9,6 +9,7 @@ import styles from './manage.module.css';
 export function TemplatesTab() {
   const templates = useScheduleStore(selectTemplates);
   const clock = useScheduleStore((s) => s.data.settings.clock);
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const { commit, openSheet } = scheduleStore.getState();
 
   return (
@@ -31,41 +32,45 @@ export function TemplatesTab() {
                 {template.breakMins > 0 ? `, ${template.breakMins} min break` : ''}
               </span>
             </div>
-            <div className={styles.actions}>
-              <Button
-                icon="arrowUp"
-                iconOnly
-                variant="ghost"
-                size="sm"
-                disabled={index === 0}
-                onClick={() =>
-                  commit('reorder templates', (c) => moveInOrder(c, 'templates', template.id, -1))
-                }
-              >
-                Move {template.name} up
-              </Button>
-              <Button
-                icon="arrowDown"
-                iconOnly
-                variant="ghost"
-                size="sm"
-                disabled={index === templates.length - 1}
-                onClick={() =>
-                  commit('reorder templates', (c) => moveInOrder(c, 'templates', template.id, 1))
-                }
-              >
-                Move {template.name} down
-              </Button>
-              <Button size="sm" onClick={() => openSheet({ kind: 'template', templateId: template.id })}>
-                Edit
-              </Button>
-            </div>
+            {!readOnly && (
+              <div className={styles.actions}>
+                <Button
+                  icon="arrowUp"
+                  iconOnly
+                  variant="ghost"
+                  size="sm"
+                  disabled={index === 0}
+                  onClick={() =>
+                    commit('reorder templates', (c) => moveInOrder(c, 'templates', template.id, -1))
+                  }
+                >
+                  Move {template.name} up
+                </Button>
+                <Button
+                  icon="arrowDown"
+                  iconOnly
+                  variant="ghost"
+                  size="sm"
+                  disabled={index === templates.length - 1}
+                  onClick={() =>
+                    commit('reorder templates', (c) => moveInOrder(c, 'templates', template.id, 1))
+                  }
+                >
+                  Move {template.name} down
+                </Button>
+                <Button size="sm" onClick={() => openSheet({ kind: 'template', templateId: template.id })}>
+                  Edit
+                </Button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
-      <Button variant="primary" icon="plus" onClick={() => openSheet({ kind: 'template' })}>
-        New template
-      </Button>
+      {!readOnly && (
+        <Button variant="primary" icon="plus" onClick={() => openSheet({ kind: 'template' })}>
+          New template
+        </Button>
+      )}
     </>
   );
 }

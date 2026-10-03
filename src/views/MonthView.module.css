@@ -312,3 +312,13 @@
     padding: 1px 4px;
   }
 }
+
+/* People who can only view see hours, not a selection. */
+ul.legend {
+  margin: 0;
+  list-style: none;
+}
+
+.legendStatic:hover {
+  background: none;
+}

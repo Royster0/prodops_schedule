@@ -43,10 +43,10 @@ describe('time', () => {
   });
 
   it('formats 12-hour compact and long times', () => {
-    expect(formatTime('07:00', 12)).toBe('7a');
+    expect(formatTime('07:00', 12)).toBe('7:00a');
     expect(formatTime('17:30', 12)).toBe('5:30p');
-    expect(formatTime('12:00', 12)).toBe('12p');
-    expect(formatTime('00:00', 12)).toBe('12a');
+    expect(formatTime('12:00', 12)).toBe('12:00p');
+    expect(formatTime('00:00', 12)).toBe('12:00a');
     expect(formatTime('07:00', 12, 'long')).toBe('7:00 AM');
     expect(formatTime('17:30', 12, 'long')).toBe('5:30 PM');
   });
@@ -57,15 +57,15 @@ describe('time', () => {
   });
 
   it('formats ranges with an en dash', () => {
-    expect(formatTimeRange('07:00', '17:30', 12)).toBe('7a–5:30p');
+    expect(formatTimeRange('07:00', '17:30', 12)).toBe('7:00a–5:30p');
     expect(formatTimeRange('07:00', '17:30', 24)).toBe('07:00–17:30');
   });
 
   it('formats axis hours', () => {
-    expect(formatHour(6, 12)).toBe('6a');
-    expect(formatHour(12, 12)).toBe('12p');
-    expect(formatHour(24, 12)).toBe('12a');
-    expect(formatHour(6, 24)).toBe('06');
+    expect(formatHour(6, 12)).toBe('6:00a');
+    expect(formatHour(12, 12)).toBe('12:00p');
+    expect(formatHour(24, 12)).toBe('12:00a');
+    expect(formatHour(6, 24)).toBe('06:00');
   });
 
   it('validates HH:MM', () => {

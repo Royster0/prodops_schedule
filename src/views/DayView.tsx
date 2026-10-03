@@ -9,6 +9,7 @@ import { shiftsIn, timeOffIn } from '../domain/scheduleIndex';
 import { hoursOf, shiftInterval } from '../domain/shifts';
 import { MINUTES_PER_DAY, floorToStep, formatHour, fromMinutes } from '../domain/time';
 import type { Employee, ISODate, Shift, TimeOff } from '../domain/types';
+import { NARROW, useMediaQuery } from '../hooks/useMediaQuery';
 import { useNow } from '../hooks/useNow';
 import {
   selectHolidaysByDate,
@@ -109,7 +110,9 @@ interface TimelineHeaderProps {
 /** Coverage histogram with the count printed, then hour ticks. */
 function TimelineHeader({ range, counts, maxPeople, clock, holiday }: TimelineHeaderProps) {
   const hours = range.end - range.start;
-  const tickEvery = hours > 14 ? 2 : 1;
+  const narrow = useMediaQuery(NARROW);
+  // Labels like '10:00p' need room: fewer of them on a phone.
+  const tickEvery = narrow ? (hours > 12 ? 4 : 2) : hours > 14 ? 2 : 1;
   const scale = Math.max(1, maxPeople);
   return (
     <div className={styles.timelineHeader}>
@@ -198,14 +201,16 @@ const DayRow = memo(function DayRow({
         data-employee-id={employee.id}
         data-date={date}
       >
-        <button
-          type="button"
-          className={styles.laneButton}
-          onClick={handleLaneClick}
-          data-range-start={range.start}
-          data-range-end={range.end}
-          aria-label={`Add a shift for ${employee.name} on ${formatDayLabel(date)}`}
-        />
+        {!ctx.readOnly && (
+          <button
+            type="button"
+            className={styles.laneButton}
+            onClick={handleLaneClick}
+            data-range-start={range.start}
+            data-range-end={range.end}
+            aria-label={`Add a shift for ${employee.name} on ${formatDayLabel(date)}`}
+          />
+        )}
         {timeOff && (
           <button
             type="button"

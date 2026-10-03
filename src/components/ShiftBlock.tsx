@@ -3,7 +3,7 @@ import { memo, type MouseEventHandler } from 'react';
 import { textOn } from '../domain/color';
 import { trackPosition } from '../domain/coverage';
 import { shiftCode, shiftColor, shiftName, shiftTags, type TemplateLookup } from '../domain/shifts';
-import { formatTimeRange, type Clock } from '../domain/time';
+import { formatTime, formatTimeRange, type Clock } from '../domain/time';
 import type { ID, Shift, Tag } from '../domain/types';
 import { isFreshShift } from '../store/freshness';
 import styles from './ShiftBlock.module.css';
@@ -39,7 +39,6 @@ export const ShiftBlock = memo(function ShiftBlock({
 }: ShiftBlockProps) {
   const color = shiftColor(shift, templates);
   const name = shiftName(shift, templates);
-  const time = formatTimeRange(shift.start, shift.end, clock);
   const track = trackPosition(shift.start, shift.end, dayStart, dayEnd);
   const tagColors = shiftTags(shift, templates)
     .map((id) => tags[id]?.color)
@@ -71,7 +70,11 @@ export const ShiftBlock = memo(function ShiftBlock({
           </span>
         )}
       </span>
-      <span className={styles.time}>{time}</span>
+      <span className={styles.time}>
+        {/* Narrow blocks put the end time on its own line rather than cut it off. */}
+        {formatTime(shift.start, clock)}–<wbr />
+        {formatTime(shift.end, clock)}
+      </span>
       <span className={styles.track} aria-hidden="true">
         <span
           className={styles.segment}

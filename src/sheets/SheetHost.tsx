@@ -3,6 +3,7 @@ import { SheetFrame } from '../components/Sheet';
 import type { SheetState } from '../store/types';
 import { scheduleStore, useScheduleStore } from '../store/useScheduleStore';
 import { ApplySheet } from './ApplySheet';
+import { ShiftDetails, TimeOffDetails } from './DetailsSheets';
 import { ImportSheet } from './ImportSheet';
 import { ManageSheet } from './manage/ManageSheet';
 import { PatternSheet } from './PatternSheet';
@@ -32,6 +33,11 @@ export function SheetHost() {
 }
 
 function SheetContent({ sheet, onClose }: { sheet: SheetState; onClose(): void }) {
+  const readOnly = useScheduleStore((s) => s.readOnly);
+  if (readOnly && sheet.kind === 'shift') return <ShiftDetails shiftId={sheet.shiftId} onClose={onClose} />;
+  if (readOnly && sheet.kind === 'timeOff') {
+    return <TimeOffDetails timeOffId={sheet.timeOffId} onClose={onClose} />;
+  }
   switch (sheet.kind) {
     case 'shift':
       return <ShiftSheet {...sheet} onClose={onClose} />;

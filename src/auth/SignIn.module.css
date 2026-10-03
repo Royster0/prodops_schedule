@@ -1,0 +1,65 @@
+.wrap {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 32px 16px;
+  background: var(--bg);
+}
+
+.card {
+  width: min(400px, 100%);
+  padding: 28px 24px;
+  border-radius: var(--radius-sheet);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.text {
+  margin: 6px 0 16px;
+  color: var(--ink-2);
+  font-size: 14.5px;
+}
+
+.actions {
+  display: flex;
+  margin-top: 12px;
+}
+
+.actions > button {
+  flex: 1;
+  justify-content: center;
+}
+
+.google {
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+}
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.or::before,
+.or::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line-2);
+  content: '';
+}
+
+.googleMark {
+  margin-right: 10px;
+  vertical-align: -3px;
+}

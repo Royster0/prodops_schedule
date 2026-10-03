@@ -47,7 +47,13 @@ export function MonthView() {
 
   return (
     <div className={styles.month}>
-      <Legend employees={employees} shiftCells={shiftCells} start={period.start} end={period.end} />
+      <Legend
+        employees={employees}
+        shiftCells={shiftCells}
+        start={period.start}
+        end={period.end}
+        readOnly={ctx.readOnly}
+      />
       <div className={styles.calendar}>
         {weekdays.map((dow) => (
           <div key={dow} className={styles.weekday}>
@@ -79,10 +85,12 @@ interface LegendProps {
   shiftCells: ShiftCells;
   start: ISODate;
   end: ISODate;
+  /** Hours only: people who can only view don't select anyone to paint. */
+  readOnly: boolean;
 }
 
 /** People chips with hours this month. Tapping one selects that person for painting and adding. */
-function Legend({ employees, shiftCells, start, end }: LegendProps) {
+function Legend({ employees, shiftCells, start, end, readOnly }: LegendProps) {
   const selectedIds = useScheduleStore((s) => s.selectedIds);
   const { toggleSelected, setSelected, clearSelection } = scheduleStore.getState();
   const monthDates = useMemo(() => dateRange(start, end), [start, end]);
@@ -97,6 +105,20 @@ function Legend({ employees, shiftCells, start, end }: LegendProps) {
     }
     return totals;
   }, [employees, shiftCells, monthDates]);
+
+  if (readOnly) {
+    return (
+      <ul className={styles.legend} aria-label="Hours this month">
+        {employees.map((employee) => (
+          <li key={employee.id} className={[styles.legendChip, styles.legendStatic].join(' ')}>
+            <Avatar name={employee.name} color={employee.color} size="sm" />
+            <span className={styles.legendName}>{employee.name}</span>
+            <span className={styles.legendHours}>{formatHours(hours.get(employee.id) ?? 0)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   return (
     <div className={styles.legend}>
@@ -226,18 +248,20 @@ const MonthDay = memo(function MonthDay({
             +{more} more
           </button>
         )}
-        <button
-          type="button"
-          className={styles.add}
-          onClick={(event) => handleMonthDayAdd(event, date)}
-          aria-label={
-            painting
-              ? `Paint ${formatDayLabel(date)} for the selected people`
-              : `Add a shift on ${formatDayLabel(date)}`
-          }
-        >
-          <Icon name="plus" size={14} />
-        </button>
+        {!ctx.readOnly && (
+          <button
+            type="button"
+            className={styles.add}
+            onClick={(event) => handleMonthDayAdd(event, date)}
+            aria-label={
+              painting
+                ? `Paint ${formatDayLabel(date)} for the selected people`
+                : `Add a shift on ${formatDayLabel(date)}`
+            }
+          >
+            <Icon name="plus" size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

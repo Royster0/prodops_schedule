@@ -70,9 +70,11 @@ export const createToolSlice: StateCreator<StoreState, [], [], ToolSlice> = (set
   return {
     tool: { kind: 'select' },
 
-    setTool: (tool) => set({ tool }),
+    // People who can only view never pick up a brush.
+    setTool: (tool) => set({ tool: get().readOnly ? { kind: 'select' } : tool }),
 
     toggleTool(tool) {
+      if (get().readOnly) return;
       set({ tool: sameTool(get().tool, tool) ? { kind: 'select' } : tool });
     },
 
