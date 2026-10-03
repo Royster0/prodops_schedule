@@ -18,6 +18,8 @@ export default function App() {
   useKeyboardShortcuts();
   const status = useScheduleStore((s) => s.status);
   const loadError = useScheduleStore((s) => s.loadError);
+  // Viewers get the schedule without the painting tools.
+  const readOnly = useScheduleStore((s) => s.readOnly);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -36,8 +38,8 @@ export default function App() {
         </main>
         <footer className={styles.footer}>
           <Toast />
-          <HintBar />
-          <Dock />
+          {!readOnly && <HintBar />}
+          {!readOnly && <Dock />}
         </footer>
       </div>
       <SheetHost />

@@ -146,3 +146,10 @@
   margin: 6px 0 18px;
   background: var(--line-2);
 }
+
+.roleSelect {
+  width: auto;
+  min-height: 32px;
+  padding-block: 4px;
+  font-size: 13px;
+}

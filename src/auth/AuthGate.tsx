@@ -63,7 +63,7 @@ let signedIn: { userId: string; repository: SupabaseRepository } | null = null;
 /** One repository per account, so a repeated render can't make a second one. */
 function repositoryFor(client: SupabaseClient, userId: string): SupabaseRepository {
   if (signedIn?.userId !== userId) {
-    signedIn = { userId, repository: new SupabaseRepository(client) };
+    signedIn = { userId, repository: new SupabaseRepository(client, { userId }) };
     repository.use(signedIn.repository);
   }
   return signedIn.repository;

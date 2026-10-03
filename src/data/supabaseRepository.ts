@@ -4,7 +4,8 @@ import { createId } from '../domain/ids';
 import { createStarterData, DEFAULT_SETTINGS } from '../domain/seed';
 import { COLLECTION_NAMES, SETTINGS_ID, type ChangeOp, type ScheduleData } from '../domain/types';
 import { replaceAll } from './exportImport';
-import { takeLocalSchedule } from './localStorageRepository';
+import { hasLocalSchedule, takeLocalSchedule } from './localStorageRepository';
+import { safeLocalStorage } from './preferences';
 import type { ScheduleRepository } from './repository';
 import {
   COLLECTION_BY_TABLE,
@@ -18,7 +19,20 @@ import {
 
 export type ScheduleRole = 'editor' | 'viewer';
 
+/** A schedule this person belongs to, for switching between them. */
+export interface ScheduleMembership {
+  scheduleId: string;
+  title: string;
+  role: ScheduleRole;
+  ownerId: string | null;
+}
+
+/** Remembers which schedule to open for people on more than one. */
+export const CURRENT_SCHEDULE_KEY = 'schedule.current';
+
 interface Options {
+  /** The signed-in user, who owns any schedule created for them. */
+  userId?: string;
   /** Identifies this tab's writes so their realtime echo can be ignored. */
   clientId?: string;
   /** Where a schedule kept in this browser before sign-in is picked up from. */
@@ -48,9 +62,14 @@ export class SupabaseRepository implements ScheduleRepository {
 
   scheduleId: string | null = null;
   role: ScheduleRole = 'viewer';
+  /** Who owns the open schedule and decides who can see or change it. */
+  ownerId: string | null = null;
+  /** This browser still holds a schedule from before sign-in that wasn't moved. */
+  hasLocalLeftover = false;
 
   readonly client: SupabaseClient;
   private readonly clientId: string;
+  private readonly userId: string | undefined;
   private readonly storage: Storage | undefined;
   private readonly emitDelayMs: number;
   /** What the server has, as far as this tab knows. */
@@ -61,8 +80,12 @@ export class SupabaseRepository implements ScheduleRepository {
   private listener: ((data: ScheduleData) => void) | null = null;
   private emitTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(client: SupabaseClient, { clientId = createId(), storage, emitDelayMs = 60 }: Options = {}) {
+  constructor(
+    client: SupabaseClient,
+    { userId, clientId = createId(), storage, emitDelayMs = 60 }: Options = {},
+  ) {
     this.client = client;
+    this.userId = userId;
     this.clientId = clientId;
     this.storage = storage;
     this.emitDelayMs = emitDelayMs;
@@ -72,8 +95,13 @@ export class SupabaseRepository implements ScheduleRepository {
     return this.role !== 'editor';
   }
 
+  get isOwner(): boolean {
+    return !!this.userId && this.ownerId === this.userId;
+  }
+
   async load(): Promise<ScheduleData> {
-    const { data, error } = await this.client.rpc('join_schedule');
+    const preferred = readKey(this.storage, CURRENT_SCHEDULE_KEY);
+    const { data, error } = await this.client.rpc('join_schedule', preferred ? { preferred } : {});
     if (error) throw error;
     const joined = (Array.isArray(data) ? data[0] : data) as
       | { schedule_id: string; role: ScheduleRole; created: boolean }
@@ -81,8 +109,10 @@ export class SupabaseRepository implements ScheduleRepository {
     if (!joined) throw new Error('No schedule was found for this account.');
     this.scheduleId = joined.schedule_id;
     this.role = joined.role;
+    writeKey(this.storage, CURRENT_SCHEDULE_KEY, joined.schedule_id);
 
     if (joined.created) {
+      this.ownerId = this.userId ?? null;
       // A new schedule: bring over what this browser had before sign-in, or start fresh.
       const start = takeLocalSchedule(this.storage) ?? createStarterData();
       const empty: ScheduleData = { ...emptyCollections(), settings: { ...DEFAULT_SETTINGS } };
@@ -94,7 +124,36 @@ export class SupabaseRepository implements ScheduleRepository {
     }
 
     this.confirmed = await this.fetchAll();
+    this.hasLocalLeftover = !this.readOnly && hasLocalSchedule(this.storage);
     return this.confirmed;
+  }
+
+  clearLocalLeftover(): void {
+    this.hasLocalLeftover = false;
+  }
+
+  /** Every schedule this person is on, for the switcher in Settings. */
+  async listSchedules(): Promise<ScheduleMembership[]> {
+    if (!this.userId) return [];
+    const { data, error } = await this.client
+      .from('schedule_members')
+      .select('schedule_id, role, schedules(title, owner_id)')
+      .eq('user_id', this.userId)
+      .order('joined_at');
+    if (error) throw error;
+    return (data as unknown as { schedule_id: string; role: ScheduleRole; schedules: Row | null }[]).map(
+      (m) => ({
+        scheduleId: m.schedule_id,
+        title: String(m.schedules?.title ?? 'Team schedule'),
+        role: m.role,
+        ownerId: (m.schedules?.owner_id as string | null) ?? null,
+      }),
+    );
+  }
+
+  /** Opens another schedule this person is on. The page reloads into it. */
+  switchTo(scheduleId: string): void {
+    writeKey(this.storage, CURRENT_SCHEDULE_KEY, scheduleId);
   }
 
   apply(ops: ChangeOp[]): Promise<void> {
@@ -252,7 +311,7 @@ export class SupabaseRepository implements ScheduleRepository {
     const id = this.scheduleId!;
     const settingsQuery = this.client
       .from(SETTINGS_TABLE)
-      .select('title, week_start, clock, day_start, day_end')
+      .select('title, week_start, clock, day_start, day_end, owner_id')
       .eq('id', id)
       .single();
     const [settings, ...tables] = await Promise.all([
@@ -260,6 +319,7 @@ export class SupabaseRepository implements ScheduleRepository {
       ...COLLECTION_NAMES.map((name) => this.fetchTable(TABLES[name])),
     ]);
     if (settings.error) throw settings.error;
+    this.ownerId = ((settings.data as Row).owner_id as string | null) ?? null;
 
     const data = { ...emptyCollections(), settings: settingsFromRow(settings.data as Row) } as ScheduleData;
     COLLECTION_NAMES.forEach((name, i) => {
@@ -283,6 +343,22 @@ export class SupabaseRepository implements ScheduleRepository {
       rows.push(...(data as Row[]));
       if (data.length < PAGE_SIZE) return rows;
     }
+  }
+}
+
+function readKey(storage: Storage | undefined, key: string): string | null {
+  try {
+    return (storage ?? safeLocalStorage())?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeKey(storage: Storage | undefined, key: string, value: string): void {
+  try {
+    (storage ?? safeLocalStorage())?.setItem(key, value);
+  } catch {
+    // Only a convenience: without it the latest joined schedule opens.
   }
 }
 

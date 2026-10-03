@@ -8,7 +8,7 @@ variables below the app runs as before: no sign-in, data in this browser only.
 1. **Database.** Run the files in `supabase/migrations/` in order, in the dashboard's SQL Editor
    (or `supabase db push` with the CLI). They create the tables, row level security, the
    `join_schedule` and `apply_changes` functions, and turn on realtime for the schedule tables.
-   The last file is safe to run again.
+   The last two files are safe to run again; run them in order.
 2. **Auth URLs.** In Authentication > URL Configuration, set the Site URL to the production
    address and add every address the app runs on to Redirect URLs:
    - `http://localhost:5173/**` (the dev server)
@@ -37,17 +37,26 @@ variables below the app runs as before: no sign-in, data in this browser only.
 link in the email brings the person back signed in; supabase-js keeps the session in the browser
 and refreshes it.
 
-**Who sees what.** Every table belongs to a schedule. `schedule_members` says who is on it, as an
-`editor` (can change things) or `viewer` (can look). Row level security lets members read and
-editors write; the anon role has no access at all. Viewers see "View only" in the header and the
-app refuses their edits with a toast.
+**Who sees what.** Every table belongs to a schedule. Each schedule has one **owner**
+(`schedules.owner_id`, the person it was created for), and `schedule_members` lists everyone on
+it as an `editor` (can change the schedule) or a `viewer` (can look). Row level security lets
+members read and editors write; the anon role has no access at all. Only the owner invites
+people, changes someone's access or removes them, and nobody can change the owner's own access,
+so a schedule can't be left without one. Anyone else can leave. Viewers see "View only" in the
+header, the painting tools and Add shift are hidden, and the app refuses their edits with a toast.
 
-**Joining.** On every load the app calls `join_schedule()`. It first turns any invites for the
-person's email into memberships, then, if they belong to no schedule, creates one with them as
-editor. The first time that happens in a browser that already had a schedule saved locally, that
-schedule is moved into the new account (the local copy is kept under `schedule.v1.moved`).
-Editors invite people by email in Settings > Team; the invite is claimed the next time that person
-signs in. Someone on several schedules opens the one they joined most recently.
+**Joining and existing schedules.** On every load the app calls `join_schedule()`. It turns any
+invites for the person's email into memberships, then, if they belong to no schedule, creates one
+they own.
+
+- A schedule saved in the browser before sign-in moves into the new account the first time that
+  happens (a copy stays under `schedule.v1.moved`). If the account already had a schedule, the
+  local one is left alone and editors get a notice in Settings to review it and bring it in
+  (replacing what's open, with undo) or set it aside.
+- Someone on more than one schedule (for example they signed in, then were invited to a team's)
+  can switch between them in Settings > Sharing. The choice is remembered on that device; by
+  default the one they joined most recently opens.
+- A schedule exported from another browser comes in with Settings > Import.
 
 **Saving.** Every change already goes through `commit()` as one batch of `ChangeOp`s.
 `SupabaseRepository.apply()` sends a batch to `apply_changes()`, which writes it in one

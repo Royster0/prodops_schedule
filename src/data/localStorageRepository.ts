@@ -95,3 +95,12 @@ export function takeLocalSchedule(storage: Storage | undefined = safeLocalStorag
     return null;
   }
 }
+
+/** True when this browser still holds a schedule from before sign-in. */
+export function hasLocalSchedule(storage: Storage | undefined = safeLocalStorage()): boolean {
+  try {
+    return !!storage?.getItem(STORAGE_KEY);
+  } catch {
+    return false;
+  }
+}

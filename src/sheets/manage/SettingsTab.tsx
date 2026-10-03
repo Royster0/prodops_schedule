@@ -11,7 +11,7 @@ import { formatHour } from '../../domain/time';
 import type { Settings } from '../../domain/types';
 import { scheduleStore, useScheduleStore } from '../../store/useScheduleStore';
 import styles from './manage.module.css';
-import { AccountSection } from './TeamSection';
+import { AccountSection, LocalLeftover } from './TeamSection';
 import { useAccount } from '../../auth/account';
 
 const START_HOURS = Array.from({ length: 13 }, (_, i) => i);
@@ -25,6 +25,7 @@ export function SettingsTab() {
   const [importError, setImportError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const account = useAccount();
+  const readOnly = useScheduleStore((s) => s.readOnly);
   const { commit, setTheme, openSheet } = scheduleStore.getState();
 
   const change = (patch: Partial<Settings>) => {
@@ -151,16 +152,19 @@ export function SettingsTab() {
         <Button icon="download" onClick={() => downloadSchedule(scheduleStore.getState().data, today())}>
           Export
         </Button>
-        <Button icon="upload" onClick={() => fileRef.current?.click()}>
-          Import…
-        </Button>
+        {!readOnly && (
+          <Button icon="upload" onClick={() => fileRef.current?.click()}>
+            Import…
+          </Button>
+        )}
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
       </div>
       {importError && <Notice tone="warning">{importError}</Notice>}
+      <LocalLeftover />
 
       <AccountSection />
 
-      {demoCount > 0 && (
+      {demoCount > 0 && !readOnly && (
         <>
           <div className={styles.divider} />
           <h3 className={styles.section}>Demo team</h3>

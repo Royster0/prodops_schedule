@@ -32,6 +32,7 @@ export function fakeSupabase({
   holdWrites?: boolean;
 } = {}) {
   const applyCalls: ApplyCall[] = [];
+  const joinCalls: Record<string, unknown>[] = [];
   const handlers: { event: string; table: string; handler: Handler }[] = [];
   let onStatus: ((status: string) => void) | null = null;
 
@@ -69,6 +70,7 @@ export function fakeSupabase({
   const client = {
     rpc: (name: string, args: Omit<ApplyCall, 'settle'>) => {
       if (name === 'join_schedule') {
+        joinCalls.push(args as Record<string, unknown>);
         return Promise.resolve({ data: [{ schedule_id: scheduleId, role, created }], error: null });
       }
       return new Promise<Result>((resolve) => {
@@ -85,6 +87,7 @@ export function fakeSupabase({
   return {
     client: client as unknown as SupabaseClient,
     applyCalls,
+    joinCalls,
     rows,
     /** Pushes a realtime event as Supabase would. */
     emit(table: string, eventType: 'INSERT' | 'UPDATE' | 'DELETE', row: Row) {

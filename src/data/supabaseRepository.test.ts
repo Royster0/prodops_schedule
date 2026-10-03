@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { serializeSchedule } from './exportImport';
 import { STORAGE_KEY } from './localStorageRepository';
-import { SupabaseRepository } from './supabaseRepository';
+import { CURRENT_SCHEDULE_KEY, SupabaseRepository } from './supabaseRepository';
 import { toRow } from './supabaseRows';
 import { employee, makeData, shift } from '../testing/fixtures';
 import { fakeSupabase } from '../testing/fakeSupabase';
@@ -169,5 +169,43 @@ describe('SupabaseRepository', () => {
     fake.rows.shifts = [row('shifts', shift('missed', 'ana', '2026-10-01'))];
     fake.reconnect();
     await vi.waitFor(() => expect(Object.keys(seen.at(-1)?.shifts ?? {})).toEqual(['missed']));
+  });
+
+  it('knows who owns the schedule', async () => {
+    const owned = await loaded({
+      settings: { title: 'T', week_start: 1, clock: 12, day_start: 5, day_end: 23, owner_id: 'me' },
+    });
+    expect(owned.repo.ownerId).toBe('me');
+    expect(owned.repo.isOwner).toBe(false); // no signed-in user given
+
+    const fake = fakeSupabase({ created: true });
+    const repo = new SupabaseRepository(fake.client, { userId: 'me', storage: memoryStorage() });
+    await repo.load();
+    expect(repo.isOwner).toBe(true);
+  });
+
+  it('opens the schedule picked last time and remembers the one it opened', async () => {
+    const storage = memoryStorage({ [CURRENT_SCHEDULE_KEY]: 'sched-2' });
+    const fake = fakeSupabase({ scheduleId: 'sched-1' });
+    const repo = new SupabaseRepository(fake.client, { storage });
+    await repo.load();
+    expect(fake.joinCalls).toEqual([{ preferred: 'sched-2' }]);
+    // The server said sched-2 isn't available, so sched-1 is now the one to open.
+    expect(storage.getItem(CURRENT_SCHEDULE_KEY)).toBe('sched-1');
+    repo.switchTo('sched-3');
+    expect(storage.getItem(CURRENT_SCHEDULE_KEY)).toBe('sched-3');
+  });
+
+  it("leaves this browser's schedule alone when the account already has one, and says so", async () => {
+    const local = serializeSchedule(makeData({ employees: [employee('ana')] }));
+    const storage = memoryStorage({ [STORAGE_KEY]: local });
+    const repo = new SupabaseRepository(fakeSupabase().client, { storage });
+    await repo.load();
+    expect(repo.hasLocalLeftover).toBe(true);
+    expect(storage.getItem(STORAGE_KEY)).toBe(local);
+
+    const viewer = new SupabaseRepository(fakeSupabase({ role: 'viewer' }).client, { storage });
+    await viewer.load();
+    expect(viewer.hasLocalLeftover).toBe(false);
   });
 });
