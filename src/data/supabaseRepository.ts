@@ -100,7 +100,7 @@ export class SupabaseRepository implements ScheduleRepository {
   }
 
   async load(): Promise<ScheduleData> {
-    const preferred = readKey(this.storage, CURRENT_SCHEDULE_KEY);
+    const preferred = readKey(this.storage, this.currentKey);
     const { data, error } = await this.client.rpc('join_schedule', preferred ? { preferred } : {});
     if (error) throw error;
     const joined = (Array.isArray(data) ? data[0] : data) as
@@ -109,7 +109,7 @@ export class SupabaseRepository implements ScheduleRepository {
     if (!joined) throw new Error('No schedule was found for this account.');
     this.scheduleId = joined.schedule_id;
     this.role = joined.role;
-    writeKey(this.storage, CURRENT_SCHEDULE_KEY, joined.schedule_id);
+    writeKey(this.storage, this.currentKey, joined.schedule_id);
 
     if (joined.created) {
       this.ownerId = this.userId ?? null;
@@ -153,7 +153,24 @@ export class SupabaseRepository implements ScheduleRepository {
 
   /** Opens another schedule this person is on. The page reloads into it. */
   switchTo(scheduleId: string): void {
-    writeKey(this.storage, CURRENT_SCHEDULE_KEY, scheduleId);
+    writeKey(this.storage, this.currentKey, scheduleId);
+  }
+
+  /**
+   * Emails someone a sign-in link to this app. Signing in with it claims their invite,
+   * so it works as the invite email. New addresses get an account on the way in.
+   */
+  async sendInviteEmail(email: string): Promise<void> {
+    const { error } = await this.client.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: appUrl(), shouldCreateUser: true },
+    });
+    if (error) throw error;
+  }
+
+  /** Per account, so two people sharing a browser each keep their own choice. */
+  private get currentKey(): string {
+    return this.userId ? `${CURRENT_SCHEDULE_KEY}.${this.userId}` : CURRENT_SCHEDULE_KEY;
   }
 
   apply(ops: ChangeOp[]): Promise<void> {
@@ -344,6 +361,11 @@ export class SupabaseRepository implements ScheduleRepository {
       if (data.length < PAGE_SIZE) return rows;
     }
   }
+}
+
+/** Where sign-in links bring people back: this app, without any hash or query. */
+export function appUrl(): string {
+  return typeof window === 'undefined' ? '' : window.location.origin + window.location.pathname;
 }
 
 function readKey(storage: Storage | undefined, key: string): string | null {

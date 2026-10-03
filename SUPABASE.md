@@ -8,7 +8,7 @@ variables below the app runs as before: no sign-in, data in this browser only.
 1. **Database.** Run the files in `supabase/migrations/` in order, in the dashboard's SQL Editor
    (or `supabase db push` with the CLI). They create the tables, row level security, the
    `join_schedule` and `apply_changes` functions, and turn on realtime for the schedule tables.
-   The last two files are safe to run again; run them in order.
+   Run them in order; every file after the first two is safe to run again.
 2. **Auth URLs.** In Authentication > URL Configuration, set the Site URL to the production
    address and add every address the app runs on to Redirect URLs:
    - `http://localhost:5173/**` (the dev server)
@@ -66,6 +66,12 @@ header, the painting tools and Add shift are hidden, and the app refuses their e
 **Joining and existing schedules.** On every load the app calls `join_schedule()`. It turns any
 invites for the person's email into memberships, then, if they belong to no schedule, creates one
 they own.
+
+Inviting someone saves the invite and emails them a sign-in link (the Magic Link email template,
+which you can reword under Authentication > Emails). Using that link, or signing in later with
+Google or a link with the same email, claims the invite and opens that schedule. If the email
+can't be sent (for example the built-in mailer's hourly limit), the owner can resend it or copy
+the app's address and send it themselves.
 
 - A schedule saved in the browser before sign-in moves into the new account the first time that
   happens (a copy stays under `schedule.v1.moved`). If the account already had a schedule, the

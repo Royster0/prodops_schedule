@@ -33,6 +33,7 @@ export function fakeSupabase({
 } = {}) {
   const applyCalls: ApplyCall[] = [];
   const joinCalls: Record<string, unknown>[] = [];
+  const otpCalls: Record<string, unknown>[] = [];
   const handlers: { event: string; table: string; handler: Handler }[] = [];
   let onStatus: ((status: string) => void) | null = null;
 
@@ -80,6 +81,12 @@ export function fakeSupabase({
       });
     },
     from: query,
+    auth: {
+      signInWithOtp: (args: Record<string, unknown>) => {
+        otpCalls.push(args);
+        return Promise.resolve({ data: {}, error: null });
+      },
+    },
     channel: () => channel,
     removeChannel: () => Promise.resolve('ok'),
   };
@@ -88,6 +95,7 @@ export function fakeSupabase({
     client: client as unknown as SupabaseClient,
     applyCalls,
     joinCalls,
+    otpCalls,
     rows,
     /** Pushes a realtime event as Supabase would. */
     emit(table: string, eventType: 'INSERT' | 'UPDATE' | 'DELETE', row: Row) {

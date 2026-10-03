@@ -4,7 +4,7 @@ import { useAccount, type Account } from '../../auth/account';
 import { Button } from '../../components/Button';
 import { Field, Notice } from '../../components/forms';
 import { takeLocalSchedule } from '../../data/localStorageRepository';
-import type { ScheduleMembership, ScheduleRole } from '../../data/supabaseRepository';
+import { appUrl, type ScheduleMembership, type ScheduleRole } from '../../data/supabaseRepository';
 import { scheduleStore } from '../../store/useScheduleStore';
 import styles from './manage.module.css';
 
@@ -69,6 +69,8 @@ function TeamList({ account }: { account: Account }) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<ScheduleRole>('editor');
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const show = useCallback((next: Team | null) => {
     if (next) setTeam(next);
@@ -117,6 +119,32 @@ function TeamList({ account }: { account: Account }) {
     setError(null);
     setEmail('');
     refresh();
+    await sendEmail(address);
+  };
+
+  const sendEmail = async (address: string) => {
+    setSent(null);
+    try {
+      await repo.sendInviteEmail(address);
+      setSent(`Sent ${address} a sign-in link. They get access as soon as they use it.`);
+    } catch (sendError) {
+      const message = sendError instanceof Error ? sendError.message : String(sendError);
+      setError(
+        /rate limit|security purposes|seconds/i.test(message)
+          ? `The invite is saved, but too many emails went out just now. Try Resend in a minute, or send ${address} the link below.`
+          : `The invite is saved, but the email couldn't be sent (${message}). Send ${address} the link below instead.`,
+      );
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(appUrl());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError(`Copy this address and send it: ${appUrl()}`);
+    }
   };
 
   const leave = async () => {
@@ -210,11 +238,14 @@ function TeamList({ account }: { account: Account }) {
             <span className={styles.main}>
               <span className={styles.name}>{i.email}</span>
               <span className={styles.meta}>
-                Invited · {ROLE_LABELS[i.role].toLowerCase()} once they sign in
+                Invited · {ROLE_LABELS[i.role].toLowerCase()} once they sign in with this email
               </span>
             </span>
             {isOwner && (
               <span className={styles.actions}>
+                <Button variant="ghost" size="sm" onClick={() => void sendEmail(i.email)}>
+                  Resend
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -268,6 +299,15 @@ function TeamList({ account }: { account: Account }) {
             Leave this schedule
           </Button>
         </div>
+      )}
+      {sent && <Notice>{sent}</Notice>}
+      {isOwner && (
+        <p className={styles.sectionHint}>
+          Invited people can also open <strong>{appUrl()}</strong> and sign in with the invited email.{' '}
+          <Button variant="ghost" size="sm" onClick={() => void copyLink()}>
+            {copied ? 'Copied' : 'Copy link'}
+          </Button>
+        </p>
       )}
       {error && <Notice tone="warning">{error}</Notice>}
     </>

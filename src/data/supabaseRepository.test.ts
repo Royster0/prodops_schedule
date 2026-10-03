@@ -208,4 +208,23 @@ describe('SupabaseRepository', () => {
     await viewer.load();
     expect(viewer.hasLocalLeftover).toBe(false);
   });
+
+  it('keeps the open schedule per account', async () => {
+    const storage = memoryStorage({ [`${CURRENT_SCHEDULE_KEY}.me`]: 'sched-1' });
+    const fake = fakeSupabase();
+    const repo = new SupabaseRepository(fake.client, { userId: 'me', storage });
+    await repo.load();
+    expect(fake.joinCalls).toEqual([{ preferred: 'sched-1' }]);
+    const other = fakeSupabase();
+    await new SupabaseRepository(other.client, { userId: 'someone-else', storage }).load();
+    expect(other.joinCalls).toEqual([{}]);
+  });
+
+  it('emails an invited person a sign-in link back to the app', async () => {
+    const { fake, repo } = await loaded();
+    await repo.sendInviteEmail('sam@example.com');
+    expect(fake.otpCalls).toEqual([
+      { email: 'sam@example.com', options: { emailRedirectTo: expect.any(String), shouldCreateUser: true } },
+    ]);
+  });
 });
