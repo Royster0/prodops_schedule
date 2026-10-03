@@ -45,6 +45,8 @@ export interface Shift {
   color: string;
   tags: ID[];
   note: string;
+  /** The work pattern that placed this shift through Apply shifts, if any. Used for filtering. */
+  patternId?: ID | null;
 }
 
 export interface Pattern {
@@ -160,5 +162,7 @@ export interface Filters {
   people: ID[];
   tags: ID[];
   kinds: KindFilter[];
+  /** Work patterns: matches shifts placed by one of them. */
+  patterns: ID[];
   hideEmpty: boolean;
 }

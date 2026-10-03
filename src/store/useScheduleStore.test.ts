@@ -57,19 +57,22 @@ describe('schedule store', () => {
 
 describe('stale references', () => {
   it('drops deleted people, tags and templates from selection, filters and the brush', async () => {
-    const { tag, template } = await import('../testing/fixtures');
+    const { pattern, tag, template } = await import('../testing/fixtures');
     const store = createScheduleStore({
       repository: memoryRepository(
         makeData({
           employees: [employee('ana'), employee('ben')],
           tags: [tag('lead')],
           templates: [template('L10')],
+          patterns: [pattern('p1', ['L10', '', '', '', '', '', ''])],
         }),
       ).repository,
     });
     await store.getState().init();
     store.getState().setSelected(['ana', 'ben']);
-    store.getState().setFilters({ people: ['ana'], tags: ['lead'], kinds: ['L10', 'off'] });
+    store
+      .getState()
+      .setFilters({ people: ['ana'], tags: ['lead'], kinds: ['L10', 'off'], patterns: ['p1', 'gone'] });
     store.getState().setTool({ kind: 'template', templateId: 'L10' });
 
     store.getState().commit('delete', (changes) => {
@@ -80,7 +83,7 @@ describe('stale references', () => {
 
     const s = store.getState();
     expect([...s.selectedIds]).toEqual(['ben']);
-    expect(s.filters).toMatchObject({ people: [], tags: [], kinds: ['off'] });
+    expect(s.filters).toMatchObject({ people: [], tags: [], kinds: ['off'], patterns: ['p1'] });
     expect(s.tool).toEqual({ kind: 'select' });
   });
 });

@@ -90,7 +90,10 @@ create table shifts (
   label         text not null default '',
   color         text not null check (color ~ '^#[0-9A-Fa-f]{6}$'),
   tag_ids       uuid[] not null default '{}',
-  note          text not null default ''
+  note          text not null default '',
+  -- The work pattern that placed the shift, for filtering. Kept as a plain id:
+  -- deleting a pattern leaves its shifts in place.
+  pattern_id    uuid
 );
 create index shifts_schedule_date on shifts (schedule_id, date);
 create index shifts_employee_date on shifts (employee_id, date);
@@ -192,7 +195,10 @@ class SupabaseRepository implements ScheduleRepository {
   readonly savedLabel = 'Saved';
   private cache: ScheduleData | null = null;
 
-  constructor(private client: SupabaseClient, private scheduleId: string) {}
+  constructor(
+    private client: SupabaseClient,
+    private scheduleId: string,
+  ) {}
 
   async load(): Promise<ScheduleData> {
     // One select per table, filtered by schedule_id, in parallel.
